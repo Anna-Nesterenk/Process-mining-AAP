@@ -7,3 +7,16 @@ pillow
 rich
 altair
 
+streamlit
+pandas
+plotly
+warnings
+graphviz
+tempfile
+os
+matplotlib
+seaborn
+
+pm4py
+
+reportlab
