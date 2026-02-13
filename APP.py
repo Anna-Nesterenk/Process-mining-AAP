@@ -356,27 +356,40 @@ if log is not None:
 
     if st.button("Побудувати Process Tree"):
         tree = inductive_miner.apply(log)
-
-    # --- Побудова NetworkX графа ---
-        def build_graph(node, G=None, parent=None):
+    
+        def build_graph(node, G=None, parent=None, counter=[0]):
+            """
+            Рекурсивна побудова NetworkX графа з Process Tree
+            counter - щоб створювати унікальні імена вузлів, якщо node.name=None
+            """
             if G is None:
                 G = nx.DiGraph()
-            # Ім'я вузла
-            name = node.operator if hasattr(node, 'operator') else node.name
+            
+            # Отримати назву вузла або fallback
+            name = getattr(node, 'operator', None) or getattr(node, 'name', None)
+            if name is None:
+                name = f"Node_{counter[0]}"
+                counter[0] += 1
+    
             G.add_node(name)
             if parent:
                 G.add_edge(parent, name)
+    
             # Діти
             if hasattr(node, 'children'):
                 for child in node.children:
-                    build_graph(child, G, name)
+                    build_graph(child, G, name, counter)
+            
             return G
     
         G = build_graph(tree)
     
-        # --- Візуалізація через Matplotlib ---
         plt.figure(figsize=(12, 8))
-        pos = nx.nx_pydot.graphviz_layout(G, prog='dot')  # можна змінити на 'dot' або 'twopi'
+        try:
+            pos = nx.nx_pydot.graphviz_layout(G, prog='dot')
+        except:
+            pos = nx.spring_layout(G)  # fallback, якщо pydot не працює
+        
         nx.draw(
             G,
             pos,
@@ -389,12 +402,10 @@ if log is not None:
         )
         plt.title("Process Tree (Inductive Miner)", fontsize=16)
     
-        # --- Вивід у Streamlit ---
         st.pyplot(plt.gcf())
         plt.close()
     
         st.success("Process Tree побудовано")
-
         
 
 # ---------------- Heuristics Miner ----------------
