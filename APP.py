@@ -460,17 +460,17 @@ if log is not None:
     pdf_path = os.path.join(tmp_dir, "process_graph")
     
     # --- Кнопки ---
-        if st.button("⬇️ Завантажити PNG"):
-            dot.format = "png"
-            dot.render(png_path, cleanup=True)
+    if st.button("⬇️ Завантажити PNG"):
+        dot.format = "png"
+        dot.render(png_path, cleanup=True)
     
-            with open(png_path + ".png", "rb") as f:
-                st.download_button(
-                    label="Завантажити PNG",
-                    data=f,
-                    file_name="process_graph.png",
-                    mime="image/png"
-                )
+        with open(png_path + ".png", "rb") as f:
+            st.download_button(
+                label="Завантажити PNG",
+                data=f,
+                file_name="process_graph.png",
+                mime="image/png"
+            )
     
     st.markdown(" ")
     st.markdown(" ")
