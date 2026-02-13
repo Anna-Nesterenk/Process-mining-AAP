@@ -129,8 +129,6 @@ if uploaded_file:
               round(avg_activities, 1))
 
     
-    st.subheader("🧠 Автоматичний опис процесу")
-
     most_common_start = (
         df.sort_values("timestamp")
           .groupby("case_id")
@@ -462,9 +460,6 @@ if log is not None:
     pdf_path = os.path.join(tmp_dir, "process_graph")
     
     # --- Кнопки ---
-    col1, col2 = st.columns(2)
-    
-    with col1:
         if st.button("⬇️ Завантажити PNG"):
             dot.format = "png"
             dot.render(png_path, cleanup=True)
@@ -477,19 +472,6 @@ if log is not None:
                     mime="image/png"
                 )
     
-    with col2:
-        if st.button("⬇️ Завантажити PDF"):
-            dot.format = "pdf"
-            dot.render(pdf_path, cleanup=True)
-    
-            with open(pdf_path + ".pdf", "rb") as f:
-                st.download_button(
-                    label="Завантажити PDF",
-                    data=f,
-                    file_name="process_graph.pdf",
-                    mime="application/pdf"
-                )
-
     st.markdown(" ")
     st.markdown(" ")
 
@@ -534,8 +516,7 @@ if log is not None:
     
     # ---------------- Автоматичний висновок ----------------
     
-    st.markdown("### 🧠 Автоматичний висновок")
-    
+        
     if unique_variants == 1:
         conclusion = "Процес повністю стандартизований. Всі кейси проходять однаковий сценарій."
     
@@ -632,7 +613,7 @@ if log is not None:
         elements.append(Spacer(1, 12))
     
         # --- Автоматичний висновок ---
-        elements.append(Paragraph("🧠 Автоматичний висновок", header_style))
+        elements.append(Paragraph("Висновок", header_style))
         elements.append(Paragraph(conclusion, text_style))
         elements.append(Spacer(1, 12))
     
