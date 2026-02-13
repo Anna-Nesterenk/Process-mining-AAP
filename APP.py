@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
 import networkx as nx
+import pydot
+from io import BytesIO
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.objects.log.util import dataframe_utils
@@ -460,17 +462,31 @@ if log is not None:
     pdf_path = os.path.join(tmp_dir, "process_graph")
     
     # --- Кнопки ---
-    if st.button("⬇️ Завантажити PNG"):
-        dot.format = "png"
-        dot.render(png_path, cleanup=True)
+    import pydot
+    from PIL import Image
+    from io import BytesIO
     
-        with open(png_path + ".png", "rb") as f:
-            st.download_button(
-                label="Завантажити PNG",
-                data=f,
-                file_name="process_graph.png",
-                mime="image/png"
-            )
+    if st.button("⬇️ Завантажити PNG"):
+        # Створюємо pydot граф з Graphviz Dot
+        dot_str = dot.source  # твій Digraph dot
+        graphs = pydot.graph_from_dot_data(dot_str)
+        graph = graphs[0]
+    
+        # Генеруємо PNG в пам’яті
+        png_bytes = graph.create_png()
+        img = Image.open(BytesIO(png_bytes))
+    
+        # Показуємо картинку в Streamlit
+        st.image(img, caption="Process Graph", use_column_width=True)
+    
+        # Кнопка для завантаження PNG
+        st.download_button(
+            label="Завантажити PNG",
+            data=png_bytes,
+            file_name="process_graph.png",
+            mime="image/png"
+        )
+
     
     st.markdown(" ")
     st.markdown(" ")
