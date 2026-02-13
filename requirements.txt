@@ -1,16 +1,25 @@
 # Streamlit
 streamlit==1.26.0
 
-# Data processing
+# Data
 pandas==2.3.3
 numpy==1.26.4
 
 # Visualization
-matplotlib==3.10.8
+matplotlib==3.7.2
 seaborn==0.13.2
+pillow>=10.0.0,<10.1.0
 
-# Dependencies Streamlit requires
-rich<14  # відповідає обмеженню Streamlit
+# Streamlit dependencies
+rich<14
 markdown-it-py>=4.0.0
 mdurl>=0.1.2
 pygments>=2.19.2
+
+# Optional/other dependencies
+altair<6,>=4.0
+blinker<2,>=1.0.0
+cachetools<6,>=4.0
+click<9,>=7.0
+importlib-metadata<7,>=1.4
+packaging<24,>=16.8
