@@ -354,58 +354,16 @@ if log is not None:
     st.markdown(" ")
     st.markdown("📌 Process Tree = ідеальна логічна модель, без шуму")
 
-    if st.button("Побудувати Process Tree"):
+    if st.button("Побудувати Process Tree (SVG)"):
         tree = inductive_miner.apply(log)
+        from pm4py.visualization.process_tree import visualizer as pt_visualizer
     
-        def build_graph(node, G=None, parent=None, counter=[0]):
-            """
-            Рекурсивна побудова NetworkX графа з Process Tree
-            counter - щоб створювати унікальні імена вузлів, якщо node.name=None
-            """
-            if G is None:
-                G = nx.DiGraph()
-            
-            # Отримати назву вузла або fallback
-            name = getattr(node, 'operator', None) or getattr(node, 'name', None)
-            if name is None:
-                name = f"Node_{counter[0]}"
-                counter[0] += 1
-    
-            G.add_node(name)
-            if parent:
-                G.add_edge(parent, name)
-    
-            # Діти
-            if hasattr(node, 'children'):
-                for child in node.children:
-                    build_graph(child, G, name, counter)
-            
-            return G
-    
-        G = build_graph(tree)
-    
-        plt.figure(figsize=(12, 8))
-        try:
-            pos = nx.nx_pydot.graphviz_layout(G, prog='dot')
-        except:
-            pos = nx.spring_layout(G)  # fallback, якщо pydot не працює
+        # render повертає SVG як string
+        svg_str = pt_visualizer.render(tree, format="svg")
         
-        nx.draw(
-            G,
-            pos,
-            with_labels=True,
-            arrows=True,
-            node_color='lightblue',
-            node_size=2000,
-            font_size=10,
-            font_weight='bold'
-        )
-        plt.title("Process Tree (Inductive Miner)", fontsize=16)
-    
-        st.pyplot(plt.gcf())
-        plt.close()
-    
+        st.markdown(svg_str, unsafe_allow_html=True)
         st.success("Process Tree побудовано")
+
         
 
 # ---------------- Heuristics Miner ----------------
