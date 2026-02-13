@@ -8,3 +8,4 @@ rich
 altair
 plotly
 pm4py
+reportlab
