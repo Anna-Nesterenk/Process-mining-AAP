@@ -22,11 +22,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import SimpleDocTemplate
 from reportlab.lib.units import inch
-pdfmetrics.registerFont(TTFont('ArialUnicode', 'C:/Windows/Fonts/arial.ttf'))
 
 
 # ---------------- UI ----------------
@@ -635,11 +632,20 @@ if log is not None:
         elements = []
     
         header_style = ParagraphStyle(
-            "header", fontName="ArialUnicode", fontSize=14, leading=16,
-            spaceAfter=12, textColor=colors.darkblue
+            "header",
+            fontName="Helvetica",
+            fontSize=14,
+            leading=16,
+            spaceAfter=12,
+            textColor=colors.darkblue
         )
+        
         text_style = ParagraphStyle(
-            "normal", fontName="ArialUnicode", fontSize=12, leading=14, spaceAfter=10
+            "normal",
+            fontName="Helvetica",
+            fontSize=12,
+            leading=14,
+            spaceAfter=10
         )
     
         # Заголовок
