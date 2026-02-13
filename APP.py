@@ -260,7 +260,7 @@ if uploaded_file:
     lead_time_per_case["rework_label"] = lead_time_per_case["rework"].map({True: "З повтореннями", False: "Без повторень"})
     
     # Фігура
-    plt.figure(figsize=(5,3))
+    plt.figure(figsize=(3,2))
     
     # Гістограма + Boxplot
     #sns.histplot(
@@ -278,8 +278,8 @@ if uploaded_file:
         x="lead_time",
         y="rework_label",
         palette={"З повтореннями": "red", "Без повторень": "green"},
-        width=0.1,
-        fliersize=2
+        width=0.3,
+        fliersize=3
     )
     
     plt.xlabel("Lead Time (год)")
