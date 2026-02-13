@@ -2,15 +2,15 @@
 streamlit==1.26.0
 
 # Data processing
-pandas>=2.2.0
-numpy>=1.26.0
+pandas==2.3.3
+numpy==1.26.4
 
 # Visualization
-matplotlib>=3.7.1
-seaborn>=0.13.1
+matplotlib==3.10.8
+seaborn==0.13.2
 
-# For better output and logging
-rich>=14.3.2
+# Dependencies Streamlit requires
+rich<14  # відповідає обмеженню Streamlit
 markdown-it-py>=4.0.0
 mdurl>=0.1.2
 pygments>=2.19.2
