@@ -1,1 +1,9 @@
-streamlit
+streamlit==1.26.0
+pandas==2.3.3
+numpy==1.26.4
+matplotlib==3.7.2
+seaborn==0.13.2
+plotly==5.20.0
+pillow==9.5.0
+rich<14
+altair<6,>=4.0
