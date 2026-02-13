@@ -355,45 +355,45 @@ if log is not None:
     st.markdown("📌 Process Tree = ідеальна логічна модель, без шуму")
 
     if st.button("Побудувати Process Tree"):
-    tree = inductive_miner.apply(log)
+        tree = inductive_miner.apply(log)
 
     # --- Побудова NetworkX графа ---
-    def build_graph(node, G=None, parent=None):
-        if G is None:
-            G = nx.DiGraph()
-        # Ім'я вузла
-        name = node.operator if hasattr(node, 'operator') else node.name
-        G.add_node(name)
-        if parent:
-            G.add_edge(parent, name)
-        # Діти
-        if hasattr(node, 'children'):
-            for child in node.children:
-                build_graph(child, G, name)
-        return G
-
-    G = build_graph(tree)
-
-    # --- Візуалізація через Matplotlib ---
-    plt.figure(figsize=(12, 8))
-    pos = nx.nx_pydot.graphviz_layout(G, prog='dot')  # можна змінити на 'dot' або 'twopi'
-    nx.draw(
-        G,
-        pos,
-        with_labels=True,
-        arrows=True,
-        node_color='lightblue',
-        node_size=2000,
-        font_size=10,
-        font_weight='bold'
-    )
-    plt.title("Process Tree (Inductive Miner)", fontsize=16)
-
-    # --- Вивід у Streamlit ---
-    st.pyplot(plt.gcf())
-    plt.close()
-
-    st.success("Process Tree побудовано")
+        def build_graph(node, G=None, parent=None):
+            if G is None:
+                G = nx.DiGraph()
+            # Ім'я вузла
+            name = node.operator if hasattr(node, 'operator') else node.name
+            G.add_node(name)
+            if parent:
+                G.add_edge(parent, name)
+            # Діти
+            if hasattr(node, 'children'):
+                for child in node.children:
+                    build_graph(child, G, name)
+            return G
+    
+        G = build_graph(tree)
+    
+        # --- Візуалізація через Matplotlib ---
+        plt.figure(figsize=(12, 8))
+        pos = nx.nx_pydot.graphviz_layout(G, prog='dot')  # можна змінити на 'dot' або 'twopi'
+        nx.draw(
+            G,
+            pos,
+            with_labels=True,
+            arrows=True,
+            node_color='lightblue',
+            node_size=2000,
+            font_size=10,
+            font_weight='bold'
+        )
+        plt.title("Process Tree (Inductive Miner)", fontsize=16)
+    
+        # --- Вивід у Streamlit ---
+        st.pyplot(plt.gcf())
+        plt.close()
+    
+        st.success("Process Tree побудовано")
 
         
 
