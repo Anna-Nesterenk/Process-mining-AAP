@@ -10,3 +10,4 @@ plotly
 pm4py
 reportlab
 openpyxl
+pydot
