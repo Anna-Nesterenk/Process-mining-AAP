@@ -8,6 +8,7 @@ import tempfile
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from PIL import Image
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.objects.log.util import dataframe_utils
@@ -355,7 +356,11 @@ if log is not None:
     if st.button("Побудувати Process Tree"):
         tree = inductive_miner.apply(log)
         gviz = pt_visualizer.apply(tree)
-        pt_visualizer.view(gviz)
+        #pt_visualizer.view(gviz)
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmpfile: # Збереження в тимчасовий файл PNG
+            pt_visualizer.save(gviz, tmpfile.name)
+            st.image(tmpfile.name, caption="Process Tree", use_column_width=True)
+
         st.success("Process Tree побудовано")
         
 
