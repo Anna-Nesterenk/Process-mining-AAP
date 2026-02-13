@@ -9,6 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
+import networkx as nx
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.objects.log.util import dataframe_utils
@@ -354,14 +355,46 @@ if log is not None:
     st.markdown("📌 Process Tree = ідеальна логічна модель, без шуму")
 
     if st.button("Побудувати Process Tree"):
-        tree = inductive_miner.apply(log)
-        gviz = pt_visualizer.apply(tree)
-        #pt_visualizer.view(gviz)
-        with tempfile.NamedTemporaryFile(suffix=".png") as tmpfile: # Збереження в тимчасовий файл PNG
-            pt_visualizer.save(gviz, tmpfile.name)
-            st.image(tmpfile.name, caption="Process Tree", use_column_width=True)
+    tree = inductive_miner.apply(log)
 
-        st.success("Process Tree побудовано")
+    # --- Побудова NetworkX графа ---
+    def build_graph(node, G=None, parent=None):
+        if G is None:
+            G = nx.DiGraph()
+        # Ім'я вузла
+        name = node.operator if hasattr(node, 'operator') else node.name
+        G.add_node(name)
+        if parent:
+            G.add_edge(parent, name)
+        # Діти
+        if hasattr(node, 'children'):
+            for child in node.children:
+                build_graph(child, G, name)
+        return G
+
+    G = build_graph(tree)
+
+    # --- Візуалізація через Matplotlib ---
+    plt.figure(figsize=(12, 8))
+    pos = nx.nx_pydot.graphviz_layout(G, prog='dot')  # можна змінити на 'dot' або 'twopi'
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        arrows=True,
+        node_color='lightblue',
+        node_size=2000,
+        font_size=10,
+        font_weight='bold'
+    )
+    plt.title("Process Tree (Inductive Miner)", fontsize=16)
+
+    # --- Вивід у Streamlit ---
+    st.pyplot(plt.gcf())
+    plt.close()
+
+    st.success("Process Tree побудовано")
+
         
 
 # ---------------- Heuristics Miner ----------------
