@@ -562,7 +562,7 @@ if log is not None:
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
 
-   zoom = st.slider("🔍 Масштаб діаграми", 100, 400, 200, step=25)
+    zoom = st.slider("🔍 Масштаб діаграми", 100, 400, 200, step=25)
 
     dot = Digraph(
         engine="dot",
