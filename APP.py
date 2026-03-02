@@ -13,6 +13,7 @@ import networkx as nx
 import pydot
 import io
 from io import BytesIO
+from scipy.stats import mannwhitneyu
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.objects.log.util import dataframe_utils
@@ -281,7 +282,7 @@ if uploaded_file:
     lead_time_per_case["rework_label"] = lead_time_per_case["rework"].map({True: "З повтореннями", False: "Без повторень"})
     
     # Фігура
-    plt.figure(figsize=(5,3))
+    plt.figure(figsize=(3,1))
     
     
     sns.boxplot(
@@ -289,7 +290,7 @@ if uploaded_file:
         x="lead_time",
         y="rework_label",
         palette={"З повтореннями": "red", "Без повторень": "green"},
-        width=0.3,
+        width=0.5,
         fliersize=1
     )
     
@@ -302,6 +303,54 @@ if uploaded_file:
 
     plt.tight_layout()
     st.pyplot(plt.gcf())
+
+    #----------------Аналіз тривалості кроків та повторів  ----------------------
+    st.subheader("📊 Аналіз тривалості кроків та повторів")
+    
+    # Створюємо колонку "has_rework" для кожного рядка
+    df['has_rework'] = df.groupby("Case ID")["Activity Name"].transform(lambda x: x.duplicated(keep=False))
+    
+    # Обчислюємо сумарний час на кейс та кількість повторів кожного кроку
+    step_stats = (
+        df.groupby(["Case ID", "Activity Name"])
+          .agg(
+              total_duration=("Lead Time", "sum"),   # або твоя колонка з тривалістю кроку
+              repeats=("Activity Name", "count")
+          )
+          .reset_index()
+    )
+    
+    # Візуалізація
+    plt.figure(figsize=(8,5))
+    sns.scatterplot(
+        data=step_stats,
+        x="repeats",
+        y="total_duration",
+        hue="Activity Name",
+        size="total_duration",
+        sizes=(20,200),
+        alpha=0.7
+    )
+    plt.xlabel("Кількість повторів кроку у кейсі")
+    plt.ylabel("Сумарна тривалість кроку (год)")
+    plt.title("Залежність тривалості кроків від повторів")
+    plt.tight_layout()
+    st.pyplot(plt.gcf())
+    
+    # --- Статистична значущість ---
+    # Порівнюємо тривалість кроків з повтором і без
+    reworked = step_stats[step_stats['repeats'] > 1]['total_duration']
+    non_reworked = step_stats[step_stats['repeats'] == 1]['total_duration']
+    
+    if len(reworked) > 0 and len(non_reworked) > 0:
+        stat, p = mannwhitneyu(reworked, non_reworked, alternative='two-sided')
+        st.markdown(f"**Статистична значущість:** p-value = {p:.4f}")
+        if p < 0.05:
+            st.markdown("Різниця між тривалістю кроків з повторенням і без статистично значуща ✅")
+        else:
+            st.markdown("Різниця між тривалістю кроків з повторенням і без НЕ значуща ⚠️")
+    else:
+        st.markdown("Недостатньо даних для статистичної перевірки")
     
     # ---------------- Середні показники ----------------
 
@@ -488,28 +537,6 @@ if log is not None:
     st.markdown(" ")
     st.markdown("🔴 товста + червона → критичний bottleneck")
     st.markdown("🟢 товста + зелена → стабільний шлях")
-    st.markdown(" ")
-
-    # Кнопки завантаження
-    # PNG
-    png_bytes = dot.pipe(format="png")
-    st.download_button(
-        label="⬇️ Завантажити PNG",
-        data=png_bytes,
-        file_name="process_graph.png",
-        mime="image/png"
-    )
-    
-    # PDF
-    pdf_bytes = dot.pipe(format="pdf")
-    st.download_button(
-        label="⬇️ Завантажити PDF",
-        data=pdf_bytes,
-        file_name="process_graph.pdf",
-        mime="application/pdf"
-    )
-    
-    st.markdown(" ")
     st.markdown(" ")
 
 
