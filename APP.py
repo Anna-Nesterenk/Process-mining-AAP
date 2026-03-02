@@ -567,6 +567,34 @@ if log is not None:
         graph_attr={"rankdir": "LR"}, 
         node_attr={"shape": "box", "style": "rounded,filled", "fillcolor": "#F9F9F9"} )
 
+    # Генеруємо SVG з Graphviz
+    try:
+        svg = dot.pipe(format="svg").decode("utf-8")
+        
+        # Вбудовуємо SVG у Streamlit з можливістю прокрутки
+        st.markdown(
+            f"""
+            <div style="overflow:auto; width:100%; height:700px; border:1px solid #ccc;">
+                {svg}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    except Exception as e:
+        st.error(
+            f"Не вдалося відобразити діаграму SVG. "
+            f"Перевірте, що Graphviz встановлений. Помилка: {e}"
+        )
+    
+    st.markdown("""
+    #### 🔎 Як читати діаграму
+    - Червоні товсті стрілки → критичні bottleneck’и (довгі затримки)
+    - Зелено/Оранжево → стабільний/помірний шлях
+    - Кожен вузол → Activity Name
+    - Підпис на ребрах → частота | середній час очікування
+    - Використовуйте скрол та масштаб для перегляду великих діаграм
+    """)
+
     # --- Розрахунок парето-поріг для легенди ---
     # Сортуємо за avg_waiting
     edges_sorted = edges.sort_values("avg_waiting")
