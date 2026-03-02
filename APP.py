@@ -292,12 +292,12 @@ if uploaded_file:
         fliersize=5
     )
     
-    plt.xlabel("Lead Time (год)", fontsize=10)
-    plt.ylabel("", fontsize=10)
+    plt.xlabel("Lead Time (год)", fontsize=8)
+    plt.ylabel("", fontsize=8)
     plt.title("Розподіл тривалості кейсів з Rework та без", fontsize=10)
 
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
+    plt.xticks(fontsize=8)
+    plt.yticks(fontsize=8)
 
     plt.tight_layout()
     st.pyplot(plt.gcf())
