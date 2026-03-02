@@ -280,7 +280,7 @@ if uploaded_file:
     lead_time_per_case["rework_label"] = lead_time_per_case["rework"].map({True: "З повтореннями", False: "Без повторень"})
     
     # Фігура
-    plt.figure(figsize=(3,1))
+    plt.figure(figsize=(3,3))
     
     
     sns.boxplot(
