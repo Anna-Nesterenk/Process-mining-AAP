@@ -645,7 +645,8 @@ if log is not None:
                     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                     dragmode="pan"  # додає можливість рухатись по графу
-                ))
+                    )
+                   )
     
     st.plotly_chart(fig, use_container_width=True)
 
