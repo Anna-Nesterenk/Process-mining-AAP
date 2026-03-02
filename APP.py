@@ -11,6 +11,7 @@ import seaborn as sns
 from PIL import Image
 import networkx as nx
 import pydot
+import io
 from io import BytesIO
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
@@ -430,13 +431,6 @@ if log is not None:
         node_attr={"shape": "box", "style": "rounded,filled", "fillcolor": "#F9F9F9"}
     )
 
-    # --- ЛЕГЕНДА ---
-    #with dot.subgraph(name="cluster_legend") as c:
-        #c.attr(label="Legend", fontsize="12")
-        #c.node("L1", "🟢 < 1 год", shape="box", style="filled", fillcolor="green")
-        #c.node("L2", "🟠 1–4 год", shape="box", style="filled", fillcolor="orange")
-        #c.node("L3", "🔴 > 4 год", shape="box", style="filled", fillcolor="red")
-
     # --- Розрахунок парето-поріг для легенди ---
     # Сортуємо за avg_waiting
     edges_sorted = edges.sort_values("avg_waiting")
@@ -496,7 +490,24 @@ if log is not None:
     st.markdown("🟢 товста + зелена → стабільний шлях")
     st.markdown(" ")
 
+    # Кнопки завантаження
+    # PNG
+    png_bytes = dot.pipe(format="png")
+    st.download_button(
+        label="⬇️ Завантажити PNG",
+        data=png_bytes,
+        file_name="process_graph.png",
+        mime="image/png"
+    )
     
+    # PDF
+    pdf_bytes = dot.pipe(format="pdf")
+    st.download_button(
+        label="⬇️ Завантажити PDF",
+        data=pdf_bytes,
+        file_name="process_graph.pdf",
+        mime="application/pdf"
+    )
     
     st.markdown(" ")
     st.markdown(" ")
