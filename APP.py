@@ -280,7 +280,7 @@ if uploaded_file:
     lead_time_per_case["rework_label"] = lead_time_per_case["rework"].map({True: "З повтореннями", False: "Без повторень"})
     
     # Фігура
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(6,3))
     
     
     sns.boxplot(
@@ -292,12 +292,12 @@ if uploaded_file:
         fliersize=5
     )
     
-    plt.xlabel("Lead Time (год)", fontsize=12)
-    plt.ylabel("", fontsize=12)
-    plt.title("Розподіл тривалості кейсів з Rework та без", fontsize=12)
+    plt.xlabel("Lead Time (год)", fontsize=10)
+    plt.ylabel("", fontsize=10)
+    plt.title("Розподіл тривалості кейсів з Rework та без", fontsize=10)
 
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
 
     plt.tight_layout()
     st.pyplot(plt.gcf())
