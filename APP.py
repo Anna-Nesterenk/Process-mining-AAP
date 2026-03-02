@@ -306,84 +306,49 @@ if uploaded_file:
 
     st.write(df.columns)
 
-    # ---------------- Step duration significance ----------------
-    st.subheader("📊 Статистична значущість впливу повторів на тривалість кроків")
-    
-    # Додаємо колонку rework для кожного рядка
-    df["rework"] = df["Case ID"].isin(cases_with_rework_list)
-    
-    # Групуємо по Activity Name і rework, обчислюємо середню тривалість кроку на кейс
-    step_durations = (
-        df.groupby(["Case ID", "Activity Name", "rework"])["Start Timestamp"]
-          .agg(duration=lambda x: (x.max() - x.min()).total_seconds() / 3600)
+
+    # ---------------- Аналіз тривалості кроків ----------------
+    # Групуємо по кроку та кейсу
+    step_stats = (
+        df.groupby(["Case ID", "Activity Name"])
+          .agg(
+              duration_hours=("Lead Time", "sum"),  # тут колонка з тривалістю кроку
+              count=("Activity Name", "count")
+          )
           .reset_index()
     )
     
-    # Перевірка: скільки кейсів для кожного Activity Name у кожній групі
-    step_counts = step_durations.groupby(["Activity Name", "rework"])["Case ID"].count().reset_index()
-    step_counts = step_counts.rename(columns={"Case ID": "num_cases"})
-    
-    # Для кожного Activity Name робимо Mann–Whitney U тест
-    significance_results = []
-    for act in step_durations["Activity Name"].unique():
-        group_rework = step_durations[(step_durations["Activity Name"] == act) & (step_durations["rework"])]["duration"]
-        group_no_rework = step_durations[(step_durations["Activity Name"] == act) & (~step_durations["rework"])]["duration"]
-        
-        if len(group_rework) >= 3 and len(group_no_rework) >= 3:  # мінімум даних для тесту
-            stat, p_value = mannwhitneyu(group_rework, group_no_rework, alternative="two-sided")
-            significance_results.append({"Activity Name": act, "p_value": p_value})
-        else:
-            significance_results.append({"Activity Name": act, "p_value": None})
-    
-    significance_df = pd.DataFrame(significance_results)
-    
-    # Додаємо інформацію про середню тривалість
-    avg_duration_df = (
-        step_durations.groupby(["Activity Name", "rework"])["duration"]
-                      .mean()
-                      .unstack()
-                      .reset_index()
-                      .rename(columns={True: "avg_duration_rework", False: "avg_duration_no_rework"})
+    # Розрахунок середньої тривалості кроку та сумарного імпакту
+    analysis_df = (
+        step_stats.groupby("Activity Name")
+                  .agg(
+                      avg_duration=("duration_hours", "mean"),
+                      avg_count=("count", "mean"),
+                      impact=("duration_hours", "sum")  # сумарний внесок у кейс
+                  )
+                  .reset_index()
     )
     
-    # Об'єднуємо
-    analysis_df = avg_duration_df.merge(significance_df, on="Activity Name")
-    
-    # Відображаємо
-    st.write("Середня тривалість кроків та статистична значущість (Mann–Whitney U)")
-    st.dataframe(analysis_df)
-    
-   # Якщо колонки 'p_value' немає, створимо її з NaN
-    if "p_value" not in analysis_df.columns:
-        analysis_df["p_value"] = np.nan
-    
-    # Тепер можна безпечно замінювати None на np.nan
-    analysis_df["p_value"] = analysis_df["p_value"].replace({None: np.nan})
-    
-    # Відкинемо рядки, де немає даних для побудови графіка
-    analysis_df_clean = analysis_df.dropna(subset=["avg_duration_no_rework", "avg_duration_rework"])
-    
-    # Побудова графіка
+    # Bubble chart
     fig = px.scatter(
-        analysis_df_clean,
-        x="avg_duration_no_rework",
-        y="avg_duration_rework",
-        size="avg_duration_rework",
-        color="p_value",
-        hover_data=["Activity Name", "avg_duration_no_rework", "avg_duration_rework", "p_value"],
-        title="Середня тривалість кроків: з повтореннями vs без повторів"
+        analysis_df,
+        x="avg_duration",
+        y="avg_count",
+        size="impact",
+        text="Activity Name",
+        labels={
+            "avg_duration": "Середня тривалість кроку (години)",
+            "avg_count": "Середня кількість разів на кейс",
+            "impact": "Сумарний внесок (години)"
+        },
+        title="Бульбашкова діаграма: тривалість кроку vs кількість повторів (імпакт розміром)",
+        size_max=60
     )
     
-    # Додамо діагональ 45° для порівняння
-    max_val = max(analysis_df_clean[["avg_duration_no_rework","avg_duration_rework"]].max())
-    fig.add_shape(
-        type="line",
-        line=dict(dash="dash"),
-        x0=0, x1=max_val,
-        y0=0, y1=max_val
-    )
-    
+    # Вивід у Streamlit
     st.plotly_chart(fig, use_container_width=True)
+
+    
     # ---------------- Середні показники ----------------
 
     # Припустимо, Waiting Time = Lead Time мінус суму тривалостей активностей
