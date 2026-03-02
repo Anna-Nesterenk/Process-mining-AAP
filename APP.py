@@ -31,6 +31,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate
 from reportlab.lib.units import inch
 
+from reportlab.lib.units import inch
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfbase import pdfmetrics
+
 
 # ---------------- UI ----------------
 st.set_page_config(page_title="Process Mining (Excel)", layout="wide")
@@ -803,33 +808,164 @@ if log is not None:
     else:
         st.error("Процес має значні структурні проблеми та потребує оптимізації.")
 
+    # ---------------- AI NARRATIVE ----------------
+    
+    st.header("🧠 AI Process Narrative")
+    
+    if maturity_score > 80:
+        maturity_level = "високим рівнем операційної стабільності"
+    elif maturity_score > 50:
+        maturity_level = "помірною структурною зрілістю"
+    else:
+        maturity_level = "операційною нестабільністю"
+    
+    ai_text = f"""
+    Процес характеризується {maturity_level}.
+    
+    Середній Lead Time становить {avg_duration:.2f} годин.
+    Частка rework складає {percent_rework}%.
+    Кількість унікальних варіантів процесу — {unique_variants}.
+    
+    Основні втрати часу пов'язані з кроками високої тривалості
+    та переходами з великим waiting time.
+    
+    Поточна структура процесу свідчить про необхідність
+    структурної оптимізації критичних активностей та стандартизації сценаріїв.
+    """
+    
+    st.info(ai_text)
+
+    # ---------------- KPI SCORECARD ----------------
+    
+    st.markdown("---")
+    st.header("📊 KPI Scorecard")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    col1.metric("Lead Time (avg)", f"{avg_duration:.2f} h")
+    col2.metric("Rework Rate", f"{percent_rework}%")
+    col3.metric("Variant Count", unique_variants)
+    col4.metric("Main Variant Share", f"{top1_share:.1f}%")
+
+    # ---------------- RISK HEATMAP ----------------
+    
+    st.header("🔥 Risk Heatmap")
+    
+    risk_matrix = analysis_df.copy()
+    
+    risk_matrix["risk_score"] = (
+        (risk_matrix["avg_duration"] / x_mean) *
+        (risk_matrix["avg_count"] / y_mean)
+    )
+    
+    pivot = risk_matrix.pivot_table(
+        values="risk_score",
+        index="Activity Name"
+    )
+    
+    plt.figure(figsize=(6, 8))
+    sns.heatmap(
+        pivot,
+        annot=True,
+        cmap="Reds",
+        linewidths=0.5
+    )
+    
+    plt.title("Risk Intensity per Activity")
+    plt.xticks([])
+    st.pyplot(plt.gcf())
+
+    # ---------------- IMPROVEMENT ROADMAP ----------------
+    
+    st.header("🚀 Improvement Roadmap")
+    
+    roadmap = []
+    
+    if percent_rework > 30:
+        roadmap.append("1️⃣ Провести root cause analysis повторюваних кроків")
+    
+    if not bottlenecks.empty:
+        roadmap.append(f"2️⃣ Оптимізувати крок '{top_step['Activity Name']}'")
+    
+    roadmap.append("3️⃣ Встановити SLA для критичних переходів")
+    roadmap.append("4️⃣ Стандартизувати ТОП варіанти процесу")
+    roadmap.append("5️⃣ Впровадити регулярний process monitoring dashboard")
+    
+    for item in roadmap:
+        st.write(item)
 
     # ---------------- PDF GENERATOR ----------------
     
     def generate_pdf_report(summary_text, recommendations, maturity_score):
+    
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)
         elements = []
     
+        # Реєстрація Unicode шрифту
+        pdfmetrics.registerFont(UnicodeCIDFont("HYSMyeongJo-Medium"))
+    
         style = ParagraphStyle(
-            name="NormalStyle",
+            name="UkrainianStyle",
+            fontName="HYSMyeongJo-Medium",
             fontSize=11,
+            leading=14,
             textColor=colors.black
         )
     
-        elements.append(Paragraph("<b>Process Mining Executive Report</b>", style))
+        title_style = ParagraphStyle(
+            name="TitleStyle",
+            fontName="HYSMyeongJo-Medium",
+            fontSize=16,
+            leading=18,
+            textColor=colors.black
+        )
+    
+        # ---------------- TITLE ----------------
+        elements.append(Paragraph("Process Mining Executive Report", title_style))
         elements.append(Spacer(1, 12))
     
+        # ---------------- SUMMARY ----------------
+        elements.append(Paragraph("<b>Executive Summary</b>", style))
+        elements.append(Spacer(1, 6))
         elements.append(Paragraph(summary_text.replace("\n", "<br/>"), style))
         elements.append(Spacer(1, 12))
     
+        # ---------------- RECOMMENDATIONS ----------------
+        elements.append(Paragraph("<b>Рекомендації</b>", style))
+        elements.append(Spacer(1, 6))
         elements.append(Paragraph(recommendations.replace("\n", "<br/>"), style))
         elements.append(Spacer(1, 12))
     
-        elements.append(Paragraph(f"<b>Process Maturity Score:</b> {maturity_score}/100", style))
+        # ---------------- MATURITY SCORE ----------------
+        elements.append(Paragraph("<b>Process Maturity Score</b>", style))
+        elements.append(Spacer(1, 6))
+    
+        maturity_explanation = f"""
+        Process Maturity Score — це інтегральний індекс зрілості процесу (0–100),
+        який враховує рівень rework, варіативність сценаріїв,
+        наявність bottleneck’ів та стабільність виконання процесу.
+    
+        Поточне значення: {maturity_score}/100.
+        """
+    
+        elements.append(Paragraph(maturity_explanation.replace("\n", "<br/>"), style))
+        elements.append(Spacer(1, 18))
+    
+        # ---------------- AUTHOR ----------------
+        elements.append(Paragraph("<b>Автор застосунку:</b>", style))
+        elements.append(Spacer(1, 6))
+    
+        linkedin_link = """
+        Hanna Nesterenko  
+        LinkedIn: <link href="https://www.linkedin.com/in/anna-nesterenko-bi/">https://www.linkedin.com/in/anna-nesterenko-bi/</link>
+        """
+    
+        elements.append(Paragraph(linkedin_link.replace("\n", "<br/>"), style))
     
         doc.build(elements)
         buffer.seek(0)
+    
         return buffer
 
     pdf_buffer = generate_pdf_report(summary_text, recommendations, maturity_score)
