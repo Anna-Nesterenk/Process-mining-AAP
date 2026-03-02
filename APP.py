@@ -306,54 +306,68 @@ if uploaded_file:
 
     st.write(df.columns)
 
-
-    #----------------Аналіз тривалості кроків та повторів  ----------------------
-    st.subheader("📊 Аналіз тривалості кроків та повторів")
+    # ---------------- Step duration significance ----------------
+    st.subheader("📊 Статистична значущість впливу повторів на тривалість кроків")
     
-    # Створюємо колонку "has_rework" для кожного рядка
-    df['has_rework'] = df.groupby("Case ID")["Activity Name"].transform(lambda x: x.duplicated(keep=False))
+    # Додаємо колонку rework для кожного рядка
+    df["rework"] = df["Case ID"].isin(cases_with_rework_list)
     
-    # Обчислюємо сумарний час на кейс та кількість повторів кожного кроку
-    step_stats = (
-        df.groupby(["Case ID", "Activity Name"])
-          .agg(
-              total_duration=("Lead Time", "sum"),   
-              repeats=("Activity Name", "count")
-          )
+    # Групуємо по Activity Name і rework, обчислюємо середню тривалість кроку на кейс
+    step_durations = (
+        df.groupby(["Case ID", "Activity Name", "rework"])["Start Timestamp"]
+          .agg(duration=lambda x: (x.max() - x.min()).total_seconds() / 3600)
           .reset_index()
     )
     
-    # Візуалізація
-    plt.figure(figsize=(8,5))
-    sns.scatterplot(
-        data=step_stats,
-        x="repeats",
-        y="total_duration",
-        hue="Activity Name",
-        size="total_duration",
-        sizes=(20,200),
-        alpha=0.7
-    )
-    plt.xlabel("Кількість повторів кроку у кейсі")
-    plt.ylabel("Сумарна тривалість кроку (год)")
-    plt.title("Залежність тривалості кроків від повторів")
-    plt.tight_layout()
-    st.pyplot(plt.gcf())
+    # Перевірка: скільки кейсів для кожного Activity Name у кожній групі
+    step_counts = step_durations.groupby(["Activity Name", "rework"])["Case ID"].count().reset_index()
+    step_counts = step_counts.rename(columns={"Case ID": "num_cases"})
     
-    # --- Статистична значущість ---
-    # Порівнюємо тривалість кроків з повтором і без
-    reworked = step_stats[step_stats['repeats'] > 1]['total_duration']
-    non_reworked = step_stats[step_stats['repeats'] == 1]['total_duration']
-    
-    if len(reworked) > 0 and len(non_reworked) > 0:
-        stat, p = mannwhitneyu(reworked, non_reworked, alternative='two-sided')
-        st.markdown(f"**Статистична значущість:** p-value = {p:.4f}")
-        if p < 0.05:
-            st.markdown("Різниця між тривалістю кроків з повторенням і без статистично значуща ✅")
+    # Для кожного Activity Name робимо Mann–Whitney U тест
+    significance_results = []
+    for act in step_durations["Activity Name"].unique():
+        group_rework = step_durations[(step_durations["Activity Name"] == act) & (step_durations["rework"])]["duration"]
+        group_no_rework = step_durations[(step_durations["Activity Name"] == act) & (~step_durations["rework"])]["duration"]
+        
+        if len(group_rework) >= 3 and len(group_no_rework) >= 3:  # мінімум даних для тесту
+            stat, p_value = mannwhitneyu(group_rework, group_no_rework, alternative="two-sided")
+            significance_results.append({"Activity Name": act, "p_value": p_value})
         else:
-            st.markdown("Різниця між тривалістю кроків з повторенням і без НЕ значуща ⚠️")
-    else:
-        st.markdown("Недостатньо даних для статистичної перевірки")
+            significance_results.append({"Activity Name": act, "p_value": None})
+    
+    significance_df = pd.DataFrame(significance_results)
+    
+    # Додаємо інформацію про середню тривалість
+    avg_duration_df = (
+        step_durations.groupby(["Activity Name", "rework"])["duration"]
+                      .mean()
+                      .unstack()
+                      .reset_index()
+                      .rename(columns={True: "avg_duration_rework", False: "avg_duration_no_rework"})
+    )
+    
+    # Об'єднуємо
+    analysis_df = avg_duration_df.merge(significance_df, on="Activity Name")
+    
+    # Відображаємо
+    st.write("Середня тривалість кроків та статистична значущість (Mann–Whitney U)")
+    st.dataframe(analysis_df)
+    
+    # Візуалізація: тривалість кроків з rework vs без
+    fig = px.scatter(
+        analysis_df,
+        x="avg_duration_no_rework",
+        y="avg_duration_rework",
+        size="avg_duration_rework",
+        color="p_value",
+        hover_data=["Activity Name", "avg_duration_no_rework", "avg_duration_rework", "p_value"],
+        title="Середня тривалість кроків: з повтореннями vs без повторів"
+    )
+    fig.add_shape(
+        type="line", line=dict(dash="dash"), x0=0, x1=analysis_df[["avg_duration_no_rework","avg_duration_rework"]].max().max(),
+        y0=0, y1=analysis_df[["avg_duration_no_rework","avg_duration_rework"]].max().max()
+    )
+    st.plotly_chart(fig, use_container_width=True)
     
     # ---------------- Середні показники ----------------
 
