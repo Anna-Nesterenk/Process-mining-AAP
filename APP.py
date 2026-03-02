@@ -564,8 +564,17 @@ if log is not None:
     
     dot = Digraph(
         engine="dot",
-        graph_attr={"rankdir": "LR"},
-        node_attr={"shape": "box", "style": "rounded,filled", "fillcolor": "#F9F9F9"}
+        graph_attr={
+            "rankdir": "LR",
+            "size": "12,6!",      # ширина, висота
+            "ratio": "expand",
+            "dpi": "150"
+        },
+        node_attr={
+            "shape": "box",
+            "style": "rounded,filled",
+            "fillcolor": "#F9F9F9"
+        }
     )
 
     # --- Розрахунок парето-поріг для легенди ---
@@ -862,7 +871,7 @@ if log is not None:
         index="Activity Name"
     )
     
-    plt.figure(figsize=(6, 8))
+    plt.figure(figsize=(3, 4))
     sns.heatmap(
         pivot,
         annot=True,
