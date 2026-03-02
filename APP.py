@@ -66,7 +66,7 @@ if uploaded_file:
     # ---------------- Convert to EventLog ----------------
     log = EventLog()
 
-    for 'Case ID', group in df.groupby("Case ID"):
+    for case_id, group in df.groupby("Case ID"):
         trace = Trace()
         trace.attributes["concept:name"] = str(Case ID)
 
