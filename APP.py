@@ -899,69 +899,89 @@ if log is not None:
     def generate_pdf_report(summary_text, recommendations, maturity_score):
     
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=50,
+            bottomMargin=40
+        )
+    
         elements = []
     
-        # Реєстрація Unicode шрифту
-        pdfmetrics.registerFont(UnicodeCIDFont("HYSMyeongJo-Medium"))
+        # ---------------- REGISTER FONT ----------------
+        pdfmetrics.registerFont(TTFont("DejaVuSans", "DejaVuSans.ttf"))
     
-        style = ParagraphStyle(
-            name="UkrainianStyle",
-            fontName="HYSMyeongJo-Medium",
+        # ---------------- STYLES ----------------
+        base_style = ParagraphStyle(
+            name="BaseStyle",
+            fontName="DejaVuSans",
             fontSize=11,
-            leading=14,
-            textColor=colors.black
+            leading=16,
+            textColor=colors.black,
+            firstLineIndent=20,     # відступ першого рядка
+            spaceAfter=10           # відступ між абзацами
         )
     
         title_style = ParagraphStyle(
             name="TitleStyle",
-            fontName="HYSMyeongJo-Medium",
-            fontSize=16,
-            leading=18,
-            textColor=colors.black
+            fontName="DejaVuSans",
+            fontSize=18,
+            leading=22,
+            textColor=colors.black,
+            spaceAfter=18
+        )
+    
+        subtitle_style = ParagraphStyle(
+            name="SubtitleStyle",
+            fontName="DejaVuSans",
+            fontSize=13,
+            leading=16,
+            textColor=colors.black,
+            spaceAfter=10
         )
     
         # ---------------- TITLE ----------------
         elements.append(Paragraph("Process Mining Executive Report", title_style))
-        elements.append(Spacer(1, 12))
+        elements.append(Paragraph(f"Дата формування: {datetime.now().strftime('%d.%m.%Y')}", base_style))
+        elements.append(Spacer(1, 20))
     
-        # ---------------- SUMMARY ----------------
-        elements.append(Paragraph("<b>Executive Summary</b>", style))
-        elements.append(Spacer(1, 6))
-        elements.append(Paragraph(summary_text.replace("\n", "<br/>"), style))
-        elements.append(Spacer(1, 12))
+        # ---------------- EXECUTIVE SUMMARY ----------------
+        elements.append(Paragraph("Executive Summary", subtitle_style))
+        elements.append(Paragraph(summary_text.replace("\n", "<br/>"), base_style))
+        elements.append(Spacer(1, 15))
     
         # ---------------- RECOMMENDATIONS ----------------
-        elements.append(Paragraph("<b>Рекомендації</b>", style))
-        elements.append(Spacer(1, 6))
-        elements.append(Paragraph(recommendations.replace("\n", "<br/>"), style))
-        elements.append(Spacer(1, 12))
+        elements.append(Paragraph("Рекомендації", subtitle_style))
+        elements.append(Paragraph(recommendations.replace("\n", "<br/>"), base_style))
+        elements.append(Spacer(1, 15))
     
         # ---------------- MATURITY SCORE ----------------
-        elements.append(Paragraph("<b>Process Maturity Score</b>", style))
-        elements.append(Spacer(1, 6))
+        elements.append(Paragraph("Process Maturity Score", subtitle_style))
     
-        maturity_explanation = f"""
-        Process Maturity Score — це інтегральний індекс зрілості процесу (0–100),
-        який враховує рівень rework, варіативність сценаріїв,
-        наявність bottleneck’ів та стабільність виконання процесу.
+        maturity_text = f"""
+    Process Maturity Score — це інтегральний показник зрілості процесу (шкала 0–100).
+    Він враховує рівень повторних кроків (rework), варіативність сценаріїв,
+    наявність bottleneck’ів та стабільність виконання процесу.
     
-        Поточне значення: {maturity_score}/100.
-        """
+    Поточне значення індексу: {maturity_score}/100.
+    """
     
-        elements.append(Paragraph(maturity_explanation.replace("\n", "<br/>"), style))
-        elements.append(Spacer(1, 18))
+        elements.append(Paragraph(maturity_text.replace("\n", "<br/>"), base_style))
+        elements.append(Spacer(1, 20))
     
         # ---------------- AUTHOR ----------------
-        elements.append(Paragraph("<b>Автор застосунку:</b>", style))
-        elements.append(Spacer(1, 6))
+        elements.append(Paragraph("Автор застосунку", subtitle_style))
     
-        linkedin_link = """
-        Hanna Nesterenko  
-        LinkedIn: <link href="https://www.linkedin.com/in/anna-nesterenko-bi/">https://www.linkedin.com/in/anna-nesterenko-bi/</link>
-        """
+        author_text = """
+    Hanna Nesterenko  
+    LinkedIn: <link href="https://www.linkedin.com/in/anna-nesterenko-bi/">
+    https://www.linkedin.com/in/anna-nesterenko-bi/
+    </link>
+    """
     
-        elements.append(Paragraph(linkedin_link.replace("\n", "<br/>"), style))
+        elements.append(Paragraph(author_text.replace("\n", "<br/>"), base_style))
     
         doc.build(elements)
         buffer.seek(0)
