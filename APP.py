@@ -370,7 +370,7 @@ if uploaded_file:
     )
 
     # Bubble chart
-        fig = px.scatter(
+    fig = px.scatter(
         analysis_df,
         x="avg_duration",
         y="avg_count",
