@@ -353,9 +353,15 @@ if uploaded_file:
     st.write("Середня тривалість кроків та статистична значущість (Mann–Whitney U)")
     st.dataframe(analysis_df)
     
-    # Візуалізація: тривалість кроків з rework vs без
+    # Замінимо None у p_value на np.nan
+    analysis_df["p_value"] = analysis_df["p_value"].replace({None: np.nan})
+    
+    # Відкинемо рядки, де NaN у колонках x, y або size
+    analysis_df_clean = analysis_df.dropna(subset=["avg_duration_no_rework", "avg_duration_rework", "avg_duration_rework"])
+    
+    # Побудова графіка
     fig = px.scatter(
-        analysis_df,
+        analysis_df_clean,
         x="avg_duration_no_rework",
         y="avg_duration_rework",
         size="avg_duration_rework",
@@ -363,10 +369,14 @@ if uploaded_file:
         hover_data=["Activity Name", "avg_duration_no_rework", "avg_duration_rework", "p_value"],
         title="Середня тривалість кроків: з повтореннями vs без повторів"
     )
+    
     fig.add_shape(
-        type="line", line=dict(dash="dash"), x0=0, x1=analysis_df[["avg_duration_no_rework","avg_duration_rework"]].max().max(),
-        y0=0, y1=analysis_df[["avg_duration_no_rework","avg_duration_rework"]].max().max()
+        type="line",
+        line=dict(dash="dash"),
+        x0=0, x1=analysis_df_clean[["avg_duration_no_rework","avg_duration_rework"]].max().max(),
+        y0=0, y1=analysis_df_clean[["avg_duration_no_rework","avg_duration_rework"]].max().max()
     )
+    
     st.plotly_chart(fig, use_container_width=True)
     
     # ---------------- Середні показники ----------------
