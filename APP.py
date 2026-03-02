@@ -427,7 +427,7 @@ if uploaded_file:
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("""
-    ### 🔎 Як читати діаграму
+    #### 🔎 Як читати діаграму
     
     - **Вісь X** – середня тривалість кроку  
     - **Вісь Y** – середня кількість повторів на кейс  
@@ -447,7 +447,6 @@ if uploaded_file:
         (analysis_df["avg_count"] > y_mean)
     ].sort_values("impact", ascending=False)
     
-    st.markdown("### 📊 Автоматичний висновок")
     
     if not bottlenecks.empty:
         top_step = bottlenecks.iloc[0]
@@ -709,6 +708,100 @@ if log is not None:
     )
     
     st.plotly_chart(fig, use_container_width=True)
+
+    # ---------------- FINAL EXECUTIVE SUMMARY ----------------
+    
+    st.markdown("---")
+    st.header("🧠 Executive Summary та рекомендації")
+    
+    summary_text = ""
+    
+    # 1️⃣ Rework вплив
+    lead_diff = mean_lead_rework - mean_lead_no_rework
+    
+    if percent_rework > 30:
+        summary_text += (
+            f"🔁 Значна частка кейсів ({percent_rework}%) містить повторювані кроки. "
+            f"Rework збільшує середній Lead Time на {lead_diff:.2f} год.\n\n"
+        )
+    else:
+        summary_text += (
+            f"🔁 Частка rework становить {percent_rework}%, що не є критичною, "
+            "але потребує моніторингу.\n\n"
+        )
+    
+    # 2️⃣ Bottleneck кроку (bubble chart)
+    if not bottlenecks.empty:
+        summary_text += (
+            f"🚧 Основний bottleneck на рівні активності: "
+            f"{top_step['Activity Name']} "
+            f"(середня тривалість {top_step['avg_duration']:.2f} год).\n\n"
+        )
+    
+    # 3️⃣ Bottleneck переходу (Heuristics)
+    summary_text += (
+        f"⏳ Найбільша затримка між кроками: "
+        f"{bottleneck_row['Activity Name']} → "
+        f"{bottleneck_row['next_activity']} "
+        f"({bottleneck_row['avg_waiting']:.2f} год очікування).\n\n"
+    )
+    
+    # 4️⃣ Варіативність
+    if unique_variants > total_cases * 0.5:
+        summary_text += (
+            "🔀 Процес має високу варіативність, що може свідчити "
+            "про нестандартизовані процедури або винятки.\n\n"
+        )
+    elif top1_share > 70:
+        summary_text += (
+            "📏 Процес добре стандартизований з домінуючим основним сценарієм.\n\n"
+        )
+    
+    # ---------------- РЕКОМЕНДАЦІЇ ----------------
+    
+    recommendations = "### 📌 Рекомендації:\n\n"
+    
+    if percent_rework > 30:
+        recommendations += "- Зменшити причини повторних кроків (аналіз root cause rework).\n"
+    
+    if not bottlenecks.empty:
+        recommendations += f"- Оптимізувати або автоматизувати крок **{top_step['Activity Name']}**.\n"
+    
+    recommendations += (
+        "- Проаналізувати переходи з найбільшим waiting time.\n"
+        "- Стандартизувати варіативні сценарії або формалізувати винятки.\n"
+        "- Впровадити SLA для критичних переходів.\n"
+    )
+    
+    # Вивід
+    st.markdown(summary_text)
+    st.markdown(recommendations)
+    
+    # ---------------- PROCESS MATURITY SCORE ----------------
+    
+    maturity_score = 100
+    
+    if percent_rework > 30:
+        maturity_score -= 20
+    
+    if unique_variants > total_cases * 0.5:
+        maturity_score -= 20
+    
+    if not bottlenecks.empty:
+        maturity_score -= 20
+    
+    maturity_score = max(maturity_score, 0)
+    
+    st.subheader("📊 Process Maturity Score")
+    
+    st.metric("Індекс зрілості процесу (0–100)", maturity_score)
+    
+    if maturity_score > 80:
+        st.success("Процес високозрілий та контрольований.")
+    elif maturity_score > 50:
+        st.warning("Процес середнього рівня зрілості. Є зони для оптимізації.")
+    else:
+        st.error("Процес має значні структурні проблеми та потребує оптимізації.")
 
     
 
