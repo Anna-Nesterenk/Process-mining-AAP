@@ -217,39 +217,35 @@ if uploaded_file:
 
 
     # ---------------- Rework ----------------
-    # Обчислення кейсів з повтореннями 
+    # Обчислення кейсів з повтореннями
     activity_counts = (
-        df.groupby("Case ID")["Activity Name"]
-          .value_counts()
-          .reset_index(name="count")
+        df.groupby(["Case ID", "Activity Name"])
+          .size()  # рахує кількість повторів активності в кейсі
+          .reset_index(name="occurrences")  # назвемо колонку occurrences
     )
     
-    # Визначаємо кейси, де якась активність повторюється більше 1 разу
-    cases_with_rework_list = activity_counts.loc[activity_counts["count"] > 1, "Case ID"].unique()
+    # Вибираємо тільки активності, що повторюються більше 1 разу
+    rework_only = activity_counts[activity_counts["occurrences"] > 1].copy()
     
     st.subheader("🔁 Повторювані кроки (rework)")
     
     # ТОП кроків з повтореннями
-    # Рахуємо кількість повторів понад 1
-    rework_only["rework_times"] = rework_only["count"] - 1
+    # Кількість повторів (без першого разу)
+    rework_only["rework_times"] = rework_only["occurrences"] - 1
     
-    # Рахуємо середній rework на кейс
+    # Середня кількість повторів на кейс для кожної активності
     top_rework = (
-        rework_only
-            .groupby("Activity Name")["rework_times"]
-            .mean()
-            .reset_index()
+        rework_only.groupby("Activity Name")["rework_times"]
+                   .mean()
+                   .reset_index()
     )
     
-    # Фільтруємо тільки ті, де середній rework > 1
-    top_rework = top_rework[top_rework["rework_times"] > 1]
-    
-    # Сортуємо та округлюємо
+    # Фільтруємо активності з середньою > 1 та округлюємо
     top_rework = (
-        top_rework
-            .sort_values(by="rework_times", ascending=False)
-            .assign(rework_times=lambda x: x["rework_times"].round(1))
-            .rename(columns={"rework_times": "середня кількість повторів на кейс"})
+        top_rework[top_rework["rework_times"] > 1]
+        .sort_values(by="rework_times", ascending=False)
+        .assign(rework_times=lambda x: x["rework_times"].round(1))
+        .rename(columns={"rework_times": "середня кількість повторів на кейс"})
     )
     
     st.write("ТОП кроків з середньою кількістю повторів > 1 на кейс:")
