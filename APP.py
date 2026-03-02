@@ -280,7 +280,7 @@ if uploaded_file:
     lead_time_per_case["rework_label"] = lead_time_per_case["rework"].map({True: "З повтореннями", False: "Без повторень"})
     
     # Фігура
-    plt.figure(figsize=(3,3))
+    plt.figure(figsize=(5,3))
     
     
     sns.boxplot(
@@ -405,15 +405,31 @@ if log is not None:
     ).clip(lower=1)
     
     # Колір за waiting time
-    def waiting_to_color(hours):
-        if hours < 1:
-            return "green"
-        elif hours < 4:
-            return "orange"
-        else:
-            return "red"
+    #def waiting_to_color(hours):
+        #if hours < 1:
+            #return "green"
+        #elif hours < 4:
+            #return "orange"
+        #else:
+            #return "red"
     
-    edges["color"] = edges["avg_waiting"].apply(waiting_to_color)
+    #edges["color"] = edges["avg_waiting"].apply(waiting_to_color)
+    # --- Динамічний колір за Pareto ---
+    total_waiting = edges["avg_waiting"].sum()
+    edges = edges.sort_values("avg_waiting", ascending=False).reset_index(drop=True)
+    edges["cumsum_waiting"] = edges["avg_waiting"].cumsum()
+    edges["cumsum_ratio"] = edges["cumsum_waiting"] / total_waiting
+    
+    def pareto_color(cumsum_ratio):
+        if cumsum_ratio <= 0.8:   # Топ 80% затримок
+            return "red"
+        elif cumsum_ratio <= 0.95:  # Наступні 15%
+            return "orange"
+        else:  # Решта 5%
+            return "green"
+    
+    edges["color"] = edges["cumsum_ratio"].apply(pareto_color)
+
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
     
