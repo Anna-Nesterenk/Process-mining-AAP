@@ -68,7 +68,7 @@ if uploaded_file:
 
     for case_id, group in df.groupby("Case ID"):
         trace = Trace()
-        trace.attributes["concept:name"] = str(Case ID)
+        trace.attributes["concept:name"] = str(case_id)
 
         for _, row in group.sort_values("Start Timestamp").iterrows():
             event = Event()
