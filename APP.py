@@ -562,23 +562,28 @@ if log is not None:
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
 
+   zoom = st.slider("🔍 Масштаб діаграми", 100, 400, 200, step=25)
+
     dot = Digraph(
         engine="dot",
-        graph_attr={"rankdir": "LR"},
-        node_attr={"shape": "box", "style": "rounded,filled"}
+        graph_attr={
+            "rankdir": "LR",
+            "dpi": str(zoom),      # 🔥 головний параметр масштабування
+            "nodesep": "0.8",      # відстань між вузлами
+            "ranksep": "1.0"       # відстань між рівнями
+        },
+        node_attr={
+            "shape": "box",
+            "style": "rounded,filled",
+            "fillcolor": "#F9F9F9",
+            "fontsize": "14"       # контроль читабельності
+        },
+        edge_attr={
+            "fontsize": "12"
+        }
     )
     
-    svg = dot.pipe(format="svg").decode("utf-8")
-
-    st.components.v1.html(
-        f"""
-        <div style="overflow: auto; border:1px solid #ddd;">
-            {svg}
-        </div>
-        """,
-        height=600,
-        scrolling=True
-    )
+    st.graphviz_chart(dot, use_container_width=True)
 
     # --- Розрахунок парето-поріг для легенди ---
     # Сортуємо за avg_waiting
