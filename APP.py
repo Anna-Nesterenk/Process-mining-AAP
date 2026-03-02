@@ -634,15 +634,18 @@ if log is not None:
     )
     
     fig = go.Figure(data=[edge_trace, node_trace],
-                    layout=go.Layout(
-                        title='Heuristics Miner Interactive Network',
-                        titlefont_size=20,
-                        showlegend=False,
-                        hovermode='closest',
-                        margin=dict(b=20,l=5,r=5,t=40),
-                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
-                    ))
+                    fig.update_layout(
+                    title=dict(
+                        text="Heuristics Miner Interactive Network",
+                        font=dict(size=20)
+                    ),
+                    showlegend=False,
+                    hovermode='closest',
+                    margin=dict(b=20, l=5, r=5, t=40),
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    dragmode="pan"  # додає можливість рухатись по графу
+                ))
     
     st.plotly_chart(fig, use_container_width=True)
 
