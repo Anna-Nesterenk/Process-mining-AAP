@@ -288,16 +288,16 @@ if uploaded_file:
         x="lead_time",
         y="rework_label",
         palette={"З повтореннями": "red", "Без повторень": "green"},
-        width=0.2,
+        width=0.5,
         fliersize=5
     )
     
-    plt.xlabel("Lead Time (год)", fontsize=8)
-    plt.ylabel("", fontsize=8)
-    plt.title("Розподіл тривалості кейсів з Rework та без", fontsize=10)
+    plt.xlabel("Lead Time (год)", fontsize=6)
+    plt.ylabel("", fontsize=6)
+    plt.title("Розподіл тривалості кейсів з Rework та без", fontsize=8)
 
-    plt.xticks(fontsize=8)
-    plt.yticks(fontsize=8)
+    plt.xticks(fontsize=6)
+    plt.yticks(fontsize=6)
 
     plt.tight_layout()
     st.pyplot(plt.gcf())
