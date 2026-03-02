@@ -304,6 +304,9 @@ if uploaded_file:
     plt.tight_layout()
     st.pyplot(plt.gcf())
 
+    st.write(df.columns)
+
+
     #----------------Аналіз тривалості кроків та повторів  ----------------------
     st.subheader("📊 Аналіз тривалості кроків та повторів")
     
@@ -314,7 +317,7 @@ if uploaded_file:
     step_stats = (
         df.groupby(["Case ID", "Activity Name"])
           .agg(
-              total_duration=("Lead Time", "sum"),   # або твоя колонка з тривалістю кроку
+              total_duration=("Lead Time", "sum"),   
               repeats=("Activity Name", "count")
           )
           .reset_index()
