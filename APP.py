@@ -404,16 +404,7 @@ if log is not None:
         edges["frequency"] / edges["frequency"].max() * 5
     ).clip(lower=1)
     
-    # Колір за waiting time
-    #def waiting_to_color(hours):
-        #if hours < 1:
-            #return "green"
-        #elif hours < 4:
-            #return "orange"
-        #else:
-            #return "red"
-    
-    #edges["color"] = edges["avg_waiting"].apply(waiting_to_color)
+
     # --- Динамічний колір за Pareto ---
     total_waiting = edges["avg_waiting"].sum()
     edges = edges.sort_values("avg_waiting", ascending=False).reset_index(drop=True)
@@ -440,11 +431,36 @@ if log is not None:
     )
 
     # --- ЛЕГЕНДА ---
+    #with dot.subgraph(name="cluster_legend") as c:
+        #c.attr(label="Legend", fontsize="12")
+        #c.node("L1", "🟢 < 1 год", shape="box", style="filled", fillcolor="green")
+        #c.node("L2", "🟠 1–4 год", shape="box", style="filled", fillcolor="orange")
+        #c.node("L3", "🔴 > 4 год", shape="box", style="filled", fillcolor="red")
+
+    # --- Розрахунок парето-поріг для легенди ---
+    # Сортуємо за avg_waiting
+    edges_sorted = edges.sort_values("avg_waiting")
+    total_waiting = edges_sorted["avg_waiting"].sum()
+    edges_sorted["cumsum_waiting"] = edges_sorted["avg_waiting"].cumsum()
+    edges_sorted["cumsum_ratio"] = edges_sorted["cumsum_waiting"] / total_waiting
+    
+    # Червоно: топ 80% затримок → max avg_waiting у цій групі
+    red_threshold = edges_sorted.loc[edges_sorted["cumsum_ratio"] <= 0.8, "avg_waiting"].max()
+    # Оранжево: наступні 15% → max avg_waiting у цій групі
+    orange_threshold = edges_sorted.loc[
+        (edges_sorted["cumsum_ratio"] > 0.8) & (edges_sorted["cumsum_ratio"] <= 0.95),
+        "avg_waiting"
+    ].max()
+    # Зелено: решта
+    green_threshold = edges_sorted.loc[edges_sorted["cumsum_ratio"] > 0.95, "avg_waiting"].max()
+    
+    # --- ЛЕГЕНДА ---
     with dot.subgraph(name="cluster_legend") as c:
         c.attr(label="Legend", fontsize="12")
-        c.node("L1", "🟢 < 1 год", shape="box", style="filled", fillcolor="green")
-        c.node("L2", "🟠 1–4 год", shape="box", style="filled", fillcolor="orange")
-        c.node("L3", "🔴 > 4 год", shape="box", style="filled", fillcolor="red")
+        c.node("L1", f"🟢 ≤ {green_threshold:.1f} год", shape="box", style="filled", fillcolor="green")
+        c.node("L2", f"🟠 {green_threshold:.1f}–{orange_threshold:.1f} год", shape="box", style="filled", fillcolor="orange")
+        c.node("L3", f"🔴 > {orange_threshold:.1f} год", shape="box", style="filled", fillcolor="red")
+
     
     # Додаємо всі Activity Name як вузли
     activities = set(edges["Activity Name"]).union(edges["next_activity"])
