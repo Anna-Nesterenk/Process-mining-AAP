@@ -39,9 +39,9 @@ st.markdown("© 2026 Hanna Nesterenko | [LinkedIn](https://www.linkedin.com/in/a
 st.markdown("---")
 st.markdown("Завантажте Excel-файл з подіями для аналізу процесів")
 st.markdown("Файл має міститі обов'язкові поля (кожен рядок = подія/крок (event)):")
-st.markdown("- case_id — унікальний номер або назва кейсу")
-st.markdown("- activity — назва події/кроку")
-st.markdown("- timestamp — дата й час початку події/кроку")
+st.markdown("- Case ID — унікальний номер або назва кейсу")
+st.markdown("- Activity Name — назва події/кроку")
+st.markdown("- Start Timestamp — дата й час початку події/кроку")
 
 # ---------------- Upload Excel ----------------
 uploaded_file = st.file_uploader("Завантажте Excel лог", type=["xlsx"])
@@ -52,12 +52,12 @@ df = None
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
 
-    required_cols = {"case_id", "activity", "timestamp"}
+    required_cols = {"Case ID", "Activity Name", "Start Timestamp"}
     if not required_cols.issubset(df.columns):
-        st.error("Excel має містити колонки: case_id, activity, timestamp")
+        st.error("Excel має містити колонки: Case ID, Activity Name, Start Timestamp")
         st.stop()
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["Start Timestamp"] = pd.to_datetime(df["Start Timestamp"])
     df = dataframe_utils.convert_timestamp_columns_in_df(df)
 
     st.success("Excel успішно завантажено")
@@ -66,14 +66,14 @@ if uploaded_file:
     # ---------------- Convert to EventLog ----------------
     log = EventLog()
 
-    for case_id, group in df.groupby("case_id"):
+    for Case ID, group in df.groupby("Case ID"):
         trace = Trace()
-        trace.attributes["concept:name"] = str(case_id)
+        trace.attributes["concept:name"] = str(Case ID)
 
-        for _, row in group.sort_values("timestamp").iterrows():
+        for _, row in group.sort_values("Start Timestamp").iterrows():
             event = Event()
-            event["concept:name"] = row["activity"]
-            event["time:timestamp"] = row["timestamp"]
+            event["concept:name"] = row["Activity Name"]
+            event["time:Start Timestamp"] = row["Start Timestamp"]
             trace.append(event)
 
         log.append(trace)
@@ -85,15 +85,15 @@ if uploaded_file:
     st.subheader("📊 Загальна статистика логів")
 
     # --- Кількість кейсів ---
-    num_cases = df["case_id"].nunique()
+    num_cases = df["Case ID"].nunique()
     
     # --- Період дослідження ---
-    start_period = df["timestamp"].min()
-    end_period = df["timestamp"].max()
+    start_period = df["Start Timestamp"].min()
+    end_period = df["Start Timestamp"].max()
     
     # --- Тривалість кейсів ---
     case_times = (
-        df.groupby("case_id")["timestamp"]
+        df.groupby("Case ID")["Start Timestamp"]
         .agg(start="min", end="max")
         .reset_index()
     )
@@ -104,9 +104,9 @@ if uploaded_file:
     avg_duration = case_times["duration_hours"].mean()
     median_duration = case_times["duration_hours"].median()
     
-    # --- Кількість activity на кейс ---
+    # --- Кількість Activity Name на кейс ---
     activities_per_case = (
-        df.groupby("case_id")["activity"]
+        df.groupby("Case ID")["Activity Name"]
         .count()
     )
     avg_activities = activities_per_case.mean()
@@ -127,29 +127,29 @@ if uploaded_file:
               round(median_duration, 2))
     
     with col3:        
-        st.metric("Сер. кількість activity на кейс",
+        st.metric("Сер. кількість Activity Name на кейс",
               round(avg_activities, 1))
 
     
     most_common_start = (
-        df.sort_values("timestamp")
-          .groupby("case_id")
-          .head(1)["activity"]
+        df.sort_values("Start Timestamp")
+          .groupby("Case ID")
+          .head(1)["Activity Name"]
           .value_counts()
           .idxmax()
     )
     
     most_common_end = (
-        df.sort_values("timestamp")
-          .groupby("case_id")
-          .tail(1)["activity"]
+        df.sort_values("Start Timestamp")
+          .groupby("Case ID")
+          .tail(1)["Activity Name"]
           .value_counts()
           .idxmax()
     )
 
-    # Кількість повторів activity в межах кейсу
+    # Кількість повторів Activity Name в межах кейсу
     activity_repeats = (
-        df.groupby(["case_id", "activity"])
+        df.groupby(["Case ID", "Activity Name"])
           .size()
           .reset_index(name="count")
     )
@@ -160,7 +160,7 @@ if uploaded_file:
     ]
     
     top_rework = (
-        repeated_steps.groupby("activity")["count"]
+        repeated_steps.groupby("Activity Name")["count"]
         .sum()
         .sort_values(ascending=False)
         .head(10)
@@ -181,7 +181,7 @@ if uploaded_file:
     
     
     case_durations = (
-        df.groupby("case_id")["timestamp"]
+        df.groupby("Case ID")["Start Timestamp"]
         .agg(["min", "max"])
         .reset_index()
     )
@@ -203,40 +203,40 @@ if uploaded_file:
 
     # Знаходимо останній крок кожного кейсу
     last_activities = (
-        df.sort_values("timestamp")
-          .groupby("case_id")
-          .tail(1)["activity"]
+        df.sort_values("Start Timestamp")
+          .groupby("Case ID")
+          .tail(1)["Activity Name"]
     )
     
     top_end_activities = last_activities.value_counts().head(10)
     
     st.write("ТОП кроків завершення:")
     st.dataframe(top_end_activities.reset_index()
-                 .rename(columns={"index": "activity",
-                                  "activity": "кількість кейсів"}))
+                 .rename(columns={"index": "Activity Name",
+                                  "Activity Name": "кількість кейсів"}))
 
 
     # ---------------- Rework ----------------
     # Обчислення кейсів з повтореннями 
     activity_counts = (
-        df.groupby("case_id")["activity"]
+        df.groupby("Case ID")["Activity Name"]
           .value_counts()
           .reset_index(name="count")
     )
     
     # Визначаємо кейси, де якась активність повторюється більше 1 разу
-    cases_with_rework_list = activity_counts.loc[activity_counts["count"] > 1, "case_id"].unique()
+    cases_with_rework_list = activity_counts.loc[activity_counts["count"] > 1, "Case ID"].unique()
     
     st.subheader("🔁 Повторювані кроки (rework)")
     
     # ТОП кроків з повтореннями
-    top_rework = activity_counts.groupby("activity")["count"].sum().sort_values(ascending=False).head(10)
+    top_rework = activity_counts.groupby("Activity Name")["count"].sum().sort_values(ascending=False).head(10)
     st.write("ТОП кроків з повтореннями:")
     st.dataframe(top_rework.reset_index().rename(columns={"count": "кількість повторів"}))
     
     # Аналітичний висновок по кейсам з повтореннями
     total_rework_cases = len(cases_with_rework_list)
-    total_cases = df["case_id"].nunique()
+    total_cases = df["Case ID"].nunique()
     percent_rework = round((total_rework_cases / total_cases) * 100, 2)
     st.markdown(
         f"В нашій вибірці {total_rework_cases} кейсів ({percent_rework}%) містять повторювані кроки. "
@@ -246,17 +246,17 @@ if uploaded_file:
     # ---------------- Графік Lead Time ----------------
     st.markdown("### 📈 Розподіл Lead Time: кейси з rework vs без")
     
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["Start Timestamp"] = pd.to_datetime(df["Start Timestamp"])
     
     # Групуємо по кейсу і обчислюємо Lead Time (години)
     lead_time_per_case = (
-        df.groupby("case_id")["timestamp"]
+        df.groupby("Case ID")["Start Timestamp"]
           .agg(lead_time=lambda x: (x.max() - x.min()).total_seconds() / 3600)
           .reset_index()
     )
     
     # Додаємо колонку Rework
-    lead_time_per_case["rework"] = lead_time_per_case["case_id"].isin(cases_with_rework_list)
+    lead_time_per_case["rework"] = lead_time_per_case["Case ID"].isin(cases_with_rework_list)
     lead_time_per_case["rework_label"] = lead_time_per_case["rework"].map({True: "З повтореннями", False: "Без повторень"})
     
     # Фігура
@@ -294,7 +294,7 @@ if uploaded_file:
     # Спрощено, якщо у немає фактичної тривалості активностей, можна просто як дельту між кроками:
     
     waiting_time_per_case = (
-        df.groupby("case_id")["timestamp"]
+        df.groupby("Case ID")["Start Timestamp"]
           .agg(waiting_time=lambda x: ((x.max() - x.min()).total_seconds() / 3600) * 0.3)  # наприклад 30% Lead Time
           .reset_index()
     )
@@ -345,20 +345,20 @@ if log is not None:
  
 
     # Події відсортовані
-    df_sorted = df.sort_values(["case_id", "timestamp"])
+    df_sorted = df.sort_values(["Case ID", "Start Timestamp"])
     
-    # Наступна activity та timestamp
+    # Наступна Activity Name та Start Timestamp
     df_sorted["next_activity"] = (
-        df_sorted.groupby("case_id")["activity"].shift(-1)
+        df_sorted.groupby("Case ID")["Activity Name"].shift(-1)
     )
     
     df_sorted["next_timestamp"] = (
-        df_sorted.groupby("case_id")["timestamp"].shift(-1)
+        df_sorted.groupby("Case ID")["Start Timestamp"].shift(-1)
     )
     
     # Час очікування
     df_sorted["waiting_time_hours"] = (
-        df_sorted["next_timestamp"] - df_sorted["timestamp"]
+        df_sorted["next_timestamp"] - df_sorted["Start Timestamp"]
     ).dt.total_seconds() / 3600
     
     # Видаляємо останні події кейсів
@@ -367,9 +367,9 @@ if log is not None:
     # Агрегація
     edges = (
         transitions
-        .groupby(["activity", "next_activity"])
+        .groupby(["Activity Name", "next_activity"])
         .agg(
-            frequency=("case_id", "count"),
+            frequency=("Case ID", "count"),
             avg_waiting=("waiting_time_hours", "mean")
         )
         .reset_index()
@@ -380,7 +380,7 @@ if log is not None:
     
     bottleneck_text = (
         f"Найбільший bottleneck: "
-        f"{bottleneck_row['activity']} → {bottleneck_row['next_activity']} "
+        f"{bottleneck_row['Activity Name']} → {bottleneck_row['next_activity']} "
         f"(середній час: {bottleneck_row['avg_waiting']:.2f} год, "
         f"частота: {bottleneck_row['frequency']})"
     )
@@ -416,15 +416,15 @@ if log is not None:
         c.node("L2", "🟠 1–4 год", shape="box", style="filled", fillcolor="orange")
         c.node("L3", "🔴 > 4 год", shape="box", style="filled", fillcolor="red")
     
-    # Додаємо всі activity як вузли
-    activities = set(edges["activity"]).union(edges["next_activity"])
+    # Додаємо всі Activity Name як вузли
+    activities = set(edges["Activity Name"]).union(edges["next_activity"])
     for act in activities:
         dot.node(act)
     
     # Додаємо ребра з кастомними параметрами
     for _, row in edges.iterrows():
         dot.edge(
-            row["activity"],
+            row["Activity Name"],
             row["next_activity"],
             label=f'{row["frequency"]} | {row["avg_waiting"]:.1f}h',
             penwidth=str(row["penwidth"]),
@@ -461,8 +461,8 @@ if log is not None:
     
     # Формуємо шлях кейсу
     variants = (
-        df.sort_values("timestamp")
-          .groupby("case_id")["activity"]
+        df.sort_values("Start Timestamp")
+          .groupby("Case ID")["Activity Name"]
           .apply(lambda x: " → ".join(x))
     )
     
@@ -526,16 +526,16 @@ if log is not None:
 # ---------------- Timeline кейсу ----------------
     st.subheader("📅 Timeline кейсу")
     
-    case_list = df["case_id"].unique()
+    case_list = df["Case ID"].unique()
     selected_case = st.selectbox("Оберіть кейс", case_list)
     
-    case_df = df[df["case_id"] == selected_case] \
-        .sort_values("timestamp")
+    case_df = df[df["Case ID"] == selected_case] \
+        .sort_values("Start Timestamp")
     
     fig = px.scatter(
         case_df,
-        x="timestamp",
-        y="activity",
+        x="Start Timestamp",
+        y="Activity Name",
         title=f"Timeline кейсу {selected_case}",
     )
     
