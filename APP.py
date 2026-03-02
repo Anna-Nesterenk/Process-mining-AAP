@@ -341,6 +341,25 @@ if uploaded_file:
                   .reset_index()
     )
 
+    # Bubble chart
+    fig = px.scatter(
+        analysis_df,
+        x="avg_duration",
+        y="avg_count",
+        size="impact",
+        text="Activity Name",
+        labels={
+            "avg_duration": "Середня тривалість кроку (години)",
+            "avg_count": "Середня кількість разів на кейс",
+            "impact": "Сумарний внесок (години)"
+        },
+        title="Бульбашкова діаграма: тривалість кроку vs кількість повторів (імпакт розміром)",
+        size_max=60
+    )
+    
+    # Вивід у Streamlit
+    st.plotly_chart(fig, use_container_width=True)
+
     
     # ---------------- Середні показники ----------------
 
