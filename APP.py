@@ -353,11 +353,15 @@ if uploaded_file:
     st.write("Середня тривалість кроків та статистична значущість (Mann–Whitney U)")
     st.dataframe(analysis_df)
     
-    # Замінимо None у p_value на np.nan
+   # Якщо колонки 'p_value' немає, створимо її з NaN
+    if "p_value" not in analysis_df.columns:
+        analysis_df["p_value"] = np.nan
+    
+    # Тепер можна безпечно замінювати None на np.nan
     analysis_df["p_value"] = analysis_df["p_value"].replace({None: np.nan})
     
-    # Відкинемо рядки, де NaN у колонках x, y або size
-    analysis_df_clean = analysis_df.dropna(subset=["avg_duration_no_rework", "avg_duration_rework", "avg_duration_rework"])
+    # Відкинемо рядки, де немає даних для побудови графіка
+    analysis_df_clean = analysis_df.dropna(subset=["avg_duration_no_rework", "avg_duration_rework"])
     
     # Побудова графіка
     fig = px.scatter(
@@ -370,15 +374,16 @@ if uploaded_file:
         title="Середня тривалість кроків: з повтореннями vs без повторів"
     )
     
+    # Додамо діагональ 45° для порівняння
+    max_val = max(analysis_df_clean[["avg_duration_no_rework","avg_duration_rework"]].max())
     fig.add_shape(
         type="line",
         line=dict(dash="dash"),
-        x0=0, x1=analysis_df_clean[["avg_duration_no_rework","avg_duration_rework"]].max().max(),
-        y0=0, y1=analysis_df_clean[["avg_duration_no_rework","avg_duration_rework"]].max().max()
+        x0=0, x1=max_val,
+        y0=0, y1=max_val
     )
     
     st.plotly_chart(fig, use_container_width=True)
-    
     # ---------------- Середні показники ----------------
 
     # Припустимо, Waiting Time = Lead Time мінус суму тривалостей активностей
