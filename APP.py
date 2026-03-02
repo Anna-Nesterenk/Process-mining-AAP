@@ -560,94 +560,104 @@ if log is not None:
     
     edges["color"] = edges["cumsum_ratio"].apply(pareto_color)
 
+    st.subheader("🔥 Heuristics Miner (Interactive Network)")
     
-    st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
-
     # Створюємо граф
     G = nx.DiGraph()
     
-    # Додаємо вузли (Activity Name)
+    # Додаємо вузли
     activities = set(edges["Activity Name"]).union(edges["next_activity"])
     for act in activities:
         G.add_node(act)
     
-    # Додаємо ребра з параметрами: частота + avg_waiting
+    # Додаємо ребра
     for _, row in edges.iterrows():
         G.add_edge(
             row["Activity Name"],
             row["next_activity"],
             weight=row["frequency"],
-            avg_wait=row["avg_waiting"],
+            avg_waiting=row["avg_waiting"],
             color=row["color"]
         )
     
-    # ---------------- Layout ----------------
-    pos = nx.spring_layout(G, k=1, seed=42)  # k регулює відстань між вузлами
+    # Розташування вузлів
+    pos = nx.spring_layout(G, k=0.5, iterations=50, seed=42)
     
-    # ---------------- Plotly traces ----------------
+    # Збираємо дані для Plotly
     edge_x = []
     edge_y = []
     edge_colors = []
-    edge_texts = []
+    edge_widths = []
     
     for u, v, data in G.edges(data=True):
         x0, y0 = pos[u]
         x1, y1 = pos[v]
-        edge_x += [x0, x1, None]
-        edge_y += [y0, y1, None]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
         edge_colors.append(data['color'])
-        edge_texts.append(f"{u} → {v}<br>Frequency: {data['weight']}<br>Avg waiting: {data['avg_wait']:.1f}h")
+        edge_widths.append(max(1, data['weight'] / edges['frequency'].max() * 10))
     
     edge_trace = go.Scatter(
         x=edge_x,
         y=edge_y,
-        line=dict(width=1, color='gray'),
-        hoverinfo='text',
-        text=edge_texts,
+        line=dict(width=1, color='#888'),
+        hoverinfo='none',
         mode='lines'
     )
     
+    # Вузли
     node_x = []
     node_y = []
     node_text = []
+    node_color = []
     
     for node in G.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
         node_text.append(node)
+        # Якщо вузол є bottleneck (avg_waiting найбільше серед вихідних ребер)
+        outgoing = G.out_edges(node, data=True)
+        max_wait = max([d['avg_waiting'] for _, _, d in outgoing], default=0)
+        if max_wait >= edges['avg_waiting'].max() * 0.8:
+            node_color.append("red")
+        else:
+            node_color.append("#F9F9F9")
     
     node_trace = go.Scatter(
         x=node_x,
         y=node_y,
         mode='markers+text',
-        hoverinfo='text',
         text=node_text,
         textposition="top center",
+        hoverinfo='text',
         marker=dict(
             showscale=False,
-            color='#F9F9F9',
-            size=40,
-            line_width=2,
-            line_color='black'
+            color=node_color,
+            size=30,
+            line=dict(width=2, color='black')
         )
     )
     
     fig = go.Figure(data=[edge_trace, node_trace],
-                    fig.update_layout(
-                    title=dict(
-                        text="Heuristics Miner Interactive Network",
-                        font=dict(size=20)
-                    ),
-                    showlegend=False,
-                    hovermode='closest',
-                    margin=dict(b=20, l=5, r=5, t=40),
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    dragmode="pan"  # додає можливість рухатись по графу
-                    ))
+                    layout=go.Layout(
+                        title=dict(
+                            text="Heuristics Miner Interactive Network",
+                            font=dict(size=20)
+                        ),
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20, l=5, r=5, t=40),
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        dragmode="pan",  # можна пересувати
+                        width=900,
+                        height=600
+                    )
+    )
     
     st.plotly_chart(fig, use_container_width=True)
+    
 
     # --- Розрахунок парето-поріг для легенди ---
     # Сортуємо за avg_waiting
