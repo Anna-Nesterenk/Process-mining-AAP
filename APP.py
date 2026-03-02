@@ -289,7 +289,7 @@ if uploaded_file:
         y="rework_label",
         palette={"З повтореннями": "red", "Без повторень": "green"},
         width=0.5,
-        fliersize=5
+        fliersize=3
     )
     
     plt.xlabel("Lead Time (год)", fontsize=6)
