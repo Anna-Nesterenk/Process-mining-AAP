@@ -304,6 +304,34 @@ if uploaded_file:
     plt.tight_layout()
     st.pyplot(plt.gcf())
 
+    # ---------------- Середні показники ----------------
+
+    # Припустимо, Waiting Time = Lead Time мінус суму тривалостей активностей
+    # Спрощено, якщо у немає фактичної тривалості активностей, можна просто як дельту між кроками:
+    
+    waiting_time_per_case = (
+        df.groupby("Case ID")["Start Timestamp"]
+          .agg(waiting_time=lambda x: ((x.max() - x.min()).total_seconds() / 3600) * 0.3)  # наприклад 30% Lead Time
+          .reset_index()
+    )
+    waiting_time_per_case.rename(columns={"waiting_time": "waiting_time_hrs"}, inplace=True)
+
+    mean_lead_rework = lead_time_per_case.loc[lead_time_per_case["rework"], "lead_time"].mean()
+    mean_lead_no_rework = lead_time_per_case.loc[~lead_time_per_case["rework"], "lead_time"].mean()
+    
+    # Якщо waiting_time_per_case існує аналогічно
+    if "waiting_time_hrs" in waiting_time_per_case.columns:
+        mean_wait_rework = waiting_time_per_case.loc[lead_time_per_case["rework"], "waiting_time_hrs"].mean()
+        mean_wait_no_rework = waiting_time_per_case.loc[~lead_time_per_case["rework"], "waiting_time_hrs"].mean()
+    else:
+        mean_wait_rework = mean_wait_no_rework = 0
+    
+    st.markdown(
+        f"**Середні показники по групах:**\n\n"
+        f"- Кейси з повтореннями: Lead Time = {mean_lead_rework:.2f} год, Waiting Time = {mean_wait_rework:.2f} год\n"
+        f"- Кейси без повторень: Lead Time = {mean_lead_no_rework:.2f} год, Waiting Time = {mean_wait_no_rework:.2f} год"
+    )
+
 
 
     # ---------------- Аналіз тривалості кроків ----------------
@@ -354,42 +382,28 @@ if uploaded_file:
             "impact": "Сумарний внесок (години)"
         },
         title="Бульбашкова діаграма: тривалість кроку vs кількість повторів (імпакт розміром)",
-        size_max=60
+        size_max=60,                # макс. розмір бульбашки
+        color_continuous_scale="RdYlGn_r"  # червоно-зелена шкала
     )
+
+    # Керування розміром графіка
+    fig.update_layout(
+        width=900,
+        height=600,
+        title_font=dict(size=20, color="black"),  # розмір і колір заголовку
+        xaxis_title="Середня тривалість кроку (год)", 
+        yaxis_title="Середня кількість повторів на кейс",
+        xaxis=dict(tickfont=dict(size=14, color="black")),  # шрифти підписів осі X
+        yaxis=dict(tickfont=dict(size=14, color="black")),  # шрифти підписів осі Y
+        legend_title=dict(font=dict(size=14, color="black")),  # шрифт легенди
+    )
+
     
     # Вивід у Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
     
-    # ---------------- Середні показники ----------------
-
-    # Припустимо, Waiting Time = Lead Time мінус суму тривалостей активностей
-    # Спрощено, якщо у немає фактичної тривалості активностей, можна просто як дельту між кроками:
     
-    waiting_time_per_case = (
-        df.groupby("Case ID")["Start Timestamp"]
-          .agg(waiting_time=lambda x: ((x.max() - x.min()).total_seconds() / 3600) * 0.3)  # наприклад 30% Lead Time
-          .reset_index()
-    )
-    waiting_time_per_case.rename(columns={"waiting_time": "waiting_time_hrs"}, inplace=True)
-
-    mean_lead_rework = lead_time_per_case.loc[lead_time_per_case["rework"], "lead_time"].mean()
-    mean_lead_no_rework = lead_time_per_case.loc[~lead_time_per_case["rework"], "lead_time"].mean()
-    
-    # Якщо waiting_time_per_case існує аналогічно
-    if "waiting_time_hrs" in waiting_time_per_case.columns:
-        mean_wait_rework = waiting_time_per_case.loc[lead_time_per_case["rework"], "waiting_time_hrs"].mean()
-        mean_wait_no_rework = waiting_time_per_case.loc[~lead_time_per_case["rework"], "waiting_time_hrs"].mean()
-    else:
-        mean_wait_rework = mean_wait_no_rework = 0
-    
-    st.markdown(
-        f"**Середні показники по групах:**\n\n"
-        f"- Кейси з повтореннями: Lead Time = {mean_lead_rework:.2f} год, Waiting Time = {mean_wait_rework:.2f} год\n"
-        f"- Кейси без повторень: Lead Time = {mean_lead_no_rework:.2f} год, Waiting Time = {mean_wait_no_rework:.2f} год"
-    )
-
-  
 # ---------------- Heuristics Miner ----------------
 if log is not None:
     st.subheader("Heuristics Miner")
