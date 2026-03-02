@@ -230,9 +230,30 @@ if uploaded_file:
     st.subheader("🔁 Повторювані кроки (rework)")
     
     # ТОП кроків з повтореннями
-    top_rework = activity_counts.groupby("Activity Name")["count"].sum().sort_values(ascending=False).head(10)
-    st.write("ТОП кроків з повтореннями:")
-    st.dataframe(top_rework.reset_index().rename(columns={"count": "кількість повторів"}))
+    #top_rework = activity_counts.groupby("Activity Name")["count"].sum().sort_values(ascending=False).head(10)
+    #st.write("ТОП кроків з повтореннями:")
+    #st.dataframe(top_rework.reset_index().rename(columns={"count": "кількість повторів"}))
+    # Беремо тільки повторювані активності (count > 1)
+    rework_only = activity_counts[activity_counts["count"] > 1].copy()
+    
+    # Рахуємо кількість повторів понад 1
+    rework_only["rework_times"] = rework_only["count"] - 1
+    
+    # Середній rework на кейс для кожної активності
+    top_rework = (
+        rework_only
+            .groupby("Activity Name")["rework_times"]
+            .mean()
+            .sort_values(ascending=False)
+            .head(10)
+    )
+    
+    st.write("ТОП кроків за середньою кількістю повторів на кейс:")
+    st.dataframe(
+        top_rework
+            .reset_index()
+            .rename(columns={"rework_times": "середня кількість повторів на кейс"})
+    )
     
     # Аналітичний висновок по кейсам з повтореннями
     total_rework_cases = len(cases_with_rework_list)
