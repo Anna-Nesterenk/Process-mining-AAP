@@ -562,27 +562,10 @@ if log is not None:
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
 
-    dot = Digraph(
-        engine="dot",
-        graph_attr={"rankdir":"LR", "nodesep":"0.8", "ranksep":"1.0"},
-        node_attr={"shape":"box", "style":"rounded,filled", "fillcolor":"#F9F9F9", "fontsize":"14"}
-    )
-    
-    # Додаємо вузли / ребра
-    dot.node("A", "Start")
-    dot.node("B", "Middle")
-    dot.node("C", "End")
-    dot.edge("A", "B")
-    dot.edge("B", "C")
-    
-    # Генеруємо SVG
-    svg = dot.pipe(format="svg").decode("utf-8")
-    
-    # Вбудовуємо у Streamlit з можливістю скролу
-    st.markdown(
-        f'<div style="overflow:auto; width:100%; height:600px">{svg}</div>',
-        unsafe_allow_html=True
-    )
+    dot = Digraph( 
+        engine="dot", 
+        graph_attr={"rankdir": "LR"}, 
+        node_attr={"shape": "box", "style": "rounded,filled", "fillcolor": "#F9F9F9"} )
 
     # --- Розрахунок парето-поріг для легенди ---
     # Сортуємо за avg_waiting
