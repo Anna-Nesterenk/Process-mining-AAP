@@ -14,6 +14,7 @@ import pydot
 import io
 from io import BytesIO
 from scipy.stats import mannwhitneyu
+import plotly.graph_objects as go
 
 from pm4py.objects.log.obj import EventLog, Trace, Event
 from pm4py.objects.log.util import dataframe_utils
@@ -562,38 +563,88 @@ if log is not None:
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
 
-    dot = Digraph( 
-        engine="dot", 
-        graph_attr={"rankdir": "LR"}, 
-        node_attr={"shape": "box", "style": "rounded,filled", "fillcolor": "#F9F9F9"} )
-
-    # Генеруємо SVG з Graphviz
-    try:
-        svg = dot.pipe(format="svg").decode("utf-8")
-        
-        # Вбудовуємо SVG у Streamlit з можливістю прокрутки
-        st.markdown(
-            f"""
-            <div style="overflow:auto; width:100%; height:700px; border:1px solid #ccc;">
-                {svg}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    except Exception as e:
-        st.error(
-            f"Не вдалося відобразити діаграму SVG. "
-            f"Перевірте, що Graphviz встановлений. Помилка: {e}"
+    # Створюємо граф
+    G = nx.DiGraph()
+    
+    # Додаємо вузли (Activity Name)
+    activities = set(edges["Activity Name"]).union(edges["next_activity"])
+    for act in activities:
+        G.add_node(act)
+    
+    # Додаємо ребра з параметрами: частота + avg_waiting
+    for _, row in edges.iterrows():
+        G.add_edge(
+            row["Activity Name"],
+            row["next_activity"],
+            weight=row["frequency"],
+            avg_wait=row["avg_waiting"],
+            color=row["color"]
         )
     
-    st.markdown("""
-    #### 🔎 Як читати діаграму
-    - Червоні товсті стрілки → критичні bottleneck’и (довгі затримки)
-    - Зелено/Оранжево → стабільний/помірний шлях
-    - Кожен вузол → Activity Name
-    - Підпис на ребрах → частота | середній час очікування
-    - Використовуйте скрол та масштаб для перегляду великих діаграм
-    """)
+    # ---------------- Layout ----------------
+    pos = nx.spring_layout(G, k=1, seed=42)  # k регулює відстань між вузлами
+    
+    # ---------------- Plotly traces ----------------
+    edge_x = []
+    edge_y = []
+    edge_colors = []
+    edge_texts = []
+    
+    for u, v, data in G.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        edge_x += [x0, x1, None]
+        edge_y += [y0, y1, None]
+        edge_colors.append(data['color'])
+        edge_texts.append(f"{u} → {v}<br>Frequency: {data['weight']}<br>Avg waiting: {data['avg_wait']:.1f}h")
+    
+    edge_trace = go.Scatter(
+        x=edge_x,
+        y=edge_y,
+        line=dict(width=1, color='gray'),
+        hoverinfo='text',
+        text=edge_texts,
+        mode='lines'
+    )
+    
+    node_x = []
+    node_y = []
+    node_text = []
+    
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(node)
+    
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode='markers+text',
+        hoverinfo='text',
+        text=node_text,
+        textposition="top center",
+        marker=dict(
+            showscale=False,
+            color='#F9F9F9',
+            size=40,
+            line_width=2,
+            line_color='black'
+        )
+    )
+    
+    fig = go.Figure(data=[edge_trace, node_trace],
+                    layout=go.Layout(
+                        title='Heuristics Miner Interactive Network',
+                        titlefont_size=20,
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20,l=5,r=5,t=40),
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+                    ))
+    
+    st.plotly_chart(fig, use_container_width=True)
 
     # --- Розрахунок парето-поріг для легенди ---
     # Сортуємо за avg_waiting
