@@ -561,6 +561,12 @@ if log is not None:
 
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
+
+    dot = Digraph(
+        engine="dot",
+        graph_attr={"rankdir": "LR"},
+        node_attr={"shape": "box", "style": "rounded,filled"}
+    )
     
     svg = dot.pipe(format="svg").decode("utf-8")
 
