@@ -803,6 +803,44 @@ if log is not None:
     else:
         st.error("Процес має значні структурні проблеми та потребує оптимізації.")
 
+
+    # ---------------- PDF GENERATOR ----------------
     
+    def generate_pdf_report(summary_text, recommendations, maturity_score):
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+    
+        style = ParagraphStyle(
+            name="NormalStyle",
+            fontSize=11,
+            textColor=colors.black
+        )
+    
+        elements.append(Paragraph("<b>Process Mining Executive Report</b>", style))
+        elements.append(Spacer(1, 12))
+    
+        elements.append(Paragraph(summary_text.replace("\n", "<br/>"), style))
+        elements.append(Spacer(1, 12))
+    
+        elements.append(Paragraph(recommendations.replace("\n", "<br/>"), style))
+        elements.append(Spacer(1, 12))
+    
+        elements.append(Paragraph(f"<b>Process Maturity Score:</b> {maturity_score}/100", style))
+    
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
+    pdf_buffer = generate_pdf_report(summary_text, recommendations, maturity_score)
+    
+    st.download_button(
+        label="📄 Завантажити Executive Report (PDF)",
+        data=pdf_buffer,
+        file_name="process_mining_executive_report.pdf",
+        mime="application/pdf"
+    )
+    
+        
 
 
