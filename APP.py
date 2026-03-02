@@ -370,36 +370,53 @@ if uploaded_file:
     )
 
     # Bubble chart
-    fig = px.scatter(
+        fig = px.scatter(
         analysis_df,
         x="avg_duration",
         y="avg_count",
         size="impact",
-        text="Activity Name",
-        labels={
-            "avg_duration": "Середня тривалість кроку (години)",
-            "avg_count": "Середня кількість разів на кейс",
-            "impact": "Сумарний внесок (години)"
-        },
-        title="Бульбашкова діаграма: тривалість кроку vs кількість повторів (імпакт розміром)",
-        size_max=60,                # макс. розмір бульбашки
-        color_continuous_scale="RdYlGn_r"  # червоно-зелена шкала
+        color="impact",
+        hover_data=["Activity Name", "avg_duration", "avg_count", "impact"],
+        size_max=40,
+        color_continuous_scale="RdYlGn_r",
+        title="Бульбашкова діаграма: тривалість кроку vs кількість повторів"
     )
-
-    # Керування розміром графіка
+    
+    # Розрахунок середніх
+    x_mean = analysis_df["avg_duration"].mean()
+    y_mean = analysis_df["avg_count"].mean()
+    
+    # Додаємо вертикальну і горизонтальну лінії
+    fig.add_shape(
+        type="line",
+        x0=x_mean, x1=x_mean,
+        y0=analysis_df["avg_count"].min(),
+        y1=analysis_df["avg_count"].max(),
+        line=dict(color="blue", width=2, dash="dash"),
+        name="Середнє по X"
+    )
+    
+    fig.add_shape(
+        type="line",
+        x0=analysis_df["avg_duration"].min(),
+        x1=analysis_df["avg_duration"].max(),
+        y0=y_mean, y1=y_mean,
+        line=dict(color="blue", width=2, dash="dash"),
+        name="Середнє по Y"
+    )
+    
+    # Керування шрифтами та розміром
     fig.update_layout(
         width=900,
         height=600,
-        title_font=dict(size=20, color="black"),  # розмір і колір заголовку
+        title_font=dict(size=20, color="black"),
         xaxis_title="Середня тривалість кроку (год)", 
         yaxis_title="Середня кількість повторів на кейс",
-        xaxis=dict(tickfont=dict(size=14, color="black")),  # шрифти підписів осі X
-        yaxis=dict(tickfont=dict(size=14, color="black")),  # шрифти підписів осі Y
-        legend_title=dict(font=dict(size=14, color="black")),  # шрифт легенди
+        xaxis=dict(tickfont=dict(size=14, color="black")),
+        yaxis=dict(tickfont=dict(size=14, color="black")),
+        legend_title=dict(font=dict(size=14, color="black")),
     )
-
     
-    # Вивід у Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
     
