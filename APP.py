@@ -250,6 +250,9 @@ if uploaded_file:
     
     st.write("ТОП кроків з середньою кількістю повторів > 1 на кейс:")
     st.dataframe(top_rework)
+
+    # Визначаємо кейси, де якась активність повторюється більше 1 разу
+    cases_with_rework_list = rework_only["Case ID"].unique()
         
     # Аналітичний висновок по кейсам з повтореннями
     total_rework_cases = len(cases_with_rework_list)
