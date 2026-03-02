@@ -376,10 +376,17 @@ if uploaded_file:
         y="avg_count",
         size="impact",
         color="impact",
+        text="Activity Name",
         hover_data=["Activity Name", "avg_duration", "avg_count", "impact"],
         size_max=40,
         color_continuous_scale="RdYlGn_r",
         title="Бульбашкова діаграма: тривалість кроку vs кількість повторів"
+    )
+
+    # Позиція тексту
+    fig.update_traces(
+        textposition="top center",
+        textfont=dict(size=12, color="black")
     )
     
     # Розрахунок середніх
@@ -418,6 +425,44 @@ if uploaded_file:
     )
     
     st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("""
+    ### 🔎 Як читати діаграму
+    
+    - **Вісь X** – середня тривалість кроку  
+    - **Вісь Y** – середня кількість повторів на кейс  
+    - **Розмір бульбашки** – сумарний вплив кроку на загальний час процесу  
+    - **Пунктирні лінії** – середні значення по вибірці  
+    
+    📌 Інтерпретація:
+    - Правий верхній квадрант → потенційні bottleneck'и  
+    - Правий нижній → довгі, але рідкі кроки  
+    - Лівий верхній → часті, але короткі  
+    - Лівий нижній → мінімальний вплив
+    """)
+
+    
+    bottlenecks = analysis_df[
+        (analysis_df["avg_duration"] > x_mean) &
+        (analysis_df["avg_count"] > y_mean)
+    ].sort_values("impact", ascending=False)
+    
+    st.markdown("### 📊 Автоматичний висновок")
+    
+    if not bottlenecks.empty:
+        top_step = bottlenecks.iloc[0]
+        
+        st.success(f"""
+        🔴 Основний потенційний bottleneck: **{top_step['Activity Name']}**
+        
+        - Середня тривалість: {round(top_step['avg_duration'],2)} год
+        - Середня кількість повторів: {round(top_step['avg_count'],2)}
+        - Сумарний імпакт: {round(top_step['impact'],2)} год
+        
+        Крок перевищує середні значення за обома параметрами та має найбільший внесок у затримку процесу.
+        """)
+    else:
+        st.info("Явно виражених bottleneck'ів (вище середнього по тривалості і повторюваності) не виявлено.")
 
     
     
