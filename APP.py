@@ -562,19 +562,16 @@ if log is not None:
     
     st.subheader("🔥 Heuristics Miner (Custom Graphviz)")
     
-    dot = Digraph(
-        engine="dot",
-        graph_attr={
-            "rankdir": "LR",
-            "size": "12,6!",      # ширина, висота
-            "ratio": "expand",
-            "dpi": "150"
-        },
-        node_attr={
-            "shape": "box",
-            "style": "rounded,filled",
-            "fillcolor": "#F9F9F9"
-        }
+    svg = dot.pipe(format="svg").decode("utf-8")
+
+    st.components.v1.html(
+        f"""
+        <div style="overflow: auto; border:1px solid #ddd;">
+            {svg}
+        </div>
+        """,
+        height=600,
+        scrolling=True
     )
 
     # --- Розрахунок парето-поріг для легенди ---
