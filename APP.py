@@ -304,21 +304,33 @@ if uploaded_file:
     plt.tight_layout()
     st.pyplot(plt.gcf())
 
-    st.write(df.columns)
 
 
     # ---------------- Аналіз тривалості кроків ----------------
-    # Групуємо по кроку та кейсу
+        # Переконаємося, що Start та End Timestamp є
+    df["Start Timestamp"] = pd.to_datetime(df["Start Timestamp"])
+    if "End Timestamp" not in df.columns:
+        # Якщо у тебе є лише Start, можна взяти наступну подію як кінець
+        df_sorted = df.sort_values(["Case ID", "Start Timestamp"])
+        df_sorted["End Timestamp"] = df_sorted.groupby("Case ID")["Start Timestamp"].shift(-1)
+        # Для останнього кроку залишаємо приблизно таку ж тривалість (наприклад, 1 хв)
+        df_sorted["End Timestamp"].fillna(df_sorted["Start Timestamp"] + pd.Timedelta(minutes=1), inplace=True)
+        df = df_sorted
+    
+    # Обчислюємо тривалість кроку у годинах
+    df["step_duration_hours"] = (df["End Timestamp"] - df["Start Timestamp"]).dt.total_seconds() / 3600
+    
+    
+   # ---------------- Аналіз тривалості кроків ----------------
     step_stats = (
         df.groupby(["Case ID", "Activity Name"])
           .agg(
-              duration_hours=("Lead Time", "sum"),  # тут колонка з тривалістю кроку
+              duration_hours=("step_duration_hours", "sum"),  # тепер ця колонка точно існує
               count=("Activity Name", "count")
           )
           .reset_index()
     )
     
-    # Розрахунок середньої тривалості кроку та сумарного імпакту
     analysis_df = (
         step_stats.groupby("Activity Name")
                   .agg(
@@ -328,25 +340,6 @@ if uploaded_file:
                   )
                   .reset_index()
     )
-    
-    # Bubble chart
-    fig = px.scatter(
-        analysis_df,
-        x="avg_duration",
-        y="avg_count",
-        size="impact",
-        text="Activity Name",
-        labels={
-            "avg_duration": "Середня тривалість кроку (години)",
-            "avg_count": "Середня кількість разів на кейс",
-            "impact": "Сумарний внесок (години)"
-        },
-        title="Бульбашкова діаграма: тривалість кроку vs кількість повторів (імпакт розміром)",
-        size_max=60
-    )
-    
-    # Вивід у Streamlit
-    st.plotly_chart(fig, use_container_width=True)
 
     
     # ---------------- Середні показники ----------------
