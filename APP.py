@@ -909,7 +909,9 @@ if log is not None:
         elements = []
     
         # ---------------- REGISTER FONT ----------------
-        pdfmetrics.registerFont(TTFont("DejaVuSans", "DejaVuSans.ttf"))
+        #pdfmetrics.registerFont(TTFont("DejaVuSans", "DejaVuSans.ttf"))
+        font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
+        pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
     
         # ---------------- STYLES ----------------
         base_style = ParagraphStyle(
