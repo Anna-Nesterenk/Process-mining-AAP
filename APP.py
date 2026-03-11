@@ -6,6 +6,7 @@ warnings.filterwarnings("ignore")
 from graphviz import Digraph
 import tempfile
 import os
+import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
@@ -60,10 +61,42 @@ gtag('config', '{GA_ID}', {{
 height=0
 )
 
+def load_metrics():
+
+    if os.path.exists("metrics.json"):
+        with open("metrics.json", "r") as f:
+            return json.load(f)
+
+    return {
+        "app_visits": 0,
+        "datasets_uploaded": 0,
+        "analyses_run": 0,
+        "pdf_generated": 0
+    }
+
+def save_metrics(metrics):
+
+    with open("metrics.json", "w") as f:
+        json.dump(metrics, f)
+
+def track_metric(metric_name):
+
+    metrics = load_metrics()
+
+    metrics[metric_name] += 1
+
+    save_metrics(metrics)
+
+
 
 # ---------------- UI ----------------
 st.set_page_config(page_title="Process Mining (Excel)", layout="wide")
 st.title("🧩 Process Mining App")
+
+if "visit_tracked" not in st.session_state:
+    track_metric("app_visits")
+    st.session_state.visit_tracked = True
+    
 # ---------------- Авторство ----------------
 st.markdown("---")
 st.markdown("© 2026 Hanna Nesterenko | [LinkedIn](https://www.linkedin.com/in/anna-nesterenko-bi/)")
@@ -76,6 +109,10 @@ st.markdown("- Start Timestamp — дата й час початку події/
 
 # ---------------- Upload Excel ----------------
 uploaded_file = st.file_uploader("Завантажте Excel лог", type=["xlsx"])
+
+if uploaded_file is not None and "upload_tracked" not in st.session_state:
+    track_metric("datasets_uploaded")
+    st.session_state.upload_tracked = True
 
 log = None
 df = None
@@ -110,6 +147,7 @@ if uploaded_file:
         log.append(trace)
 
     #st.info(f"Кількість кейсів: {len(log)}")
+    track_metric("analyses_run")
 
     
 # ---------------- Base analytics ----------------
@@ -1014,14 +1052,23 @@ if log is not None:
         return buffer
 
     pdf_buffer = generate_pdf_report(summary_text, recommendations, maturity_score)
-    
+
+    track_metric("pdf_generated")
     st.download_button(
         label="📄 Завантажити Executive Report (PDF)",
         data=pdf_buffer,
         file_name="process_mining_executive_report.pdf",
         mime="application/pdf"
     )
+
+    metrics = load_metrics()
+
+    st.sidebar.markdown("### 📊 App usage")
     
+    st.sidebar.metric("Users", metrics["app_visits"])
+    st.sidebar.metric("Datasets uploaded", metrics["datasets_uploaded"])
+    st.sidebar.metric("Analyses run", metrics["analyses_run"])
+    st.sidebar.metric("Reports generated", metrics["pdf_generated"])
         
 
 
