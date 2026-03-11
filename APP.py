@@ -35,6 +35,23 @@ from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfbase import pdfmetrics
 from datetime import datetime
 
+import streamlit.components.v1 as components
+
+GA_ID = "G-ZY97CXY9MR"
+
+components.html(
+f"""
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){{dataLayer.push(arguments);}}
+gtag('js', new Date());
+gtag('config', '{GA_ID}');
+</script>
+""",
+height=0,
+)
+
 
 # ---------------- UI ----------------
 st.set_page_config(page_title="Process Mining (Excel)", layout="wide")
