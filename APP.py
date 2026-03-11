@@ -41,15 +41,23 @@ GA_ID = "G-ZY97CXY9MR"
 
 components.html(
 f"""
+<!DOCTYPE html>
+<html>
+<head>
 <script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){{dataLayer.push(arguments);}}
 gtag('js', new Date());
-gtag('config', '{GA_ID}');
+gtag('config', '{GA_ID}', {{
+  'send_page_view': true
+}});
 </script>
+</head>
+<body></body>
+</html>
 """,
-height=0,
+height=0
 )
 
 
